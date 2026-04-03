@@ -8,6 +8,7 @@ import { Badge } from '@/components/watermelon-ui/badge'
 import { Spinner } from '@/components/watermelon-ui/spinner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/watermelon-ui/dialog'
 import { DataTable, type Column } from '@/components/DataTable'
+import { StatusAlert } from '@/components/ConfirmDialog'
 import { budgetApi, botsApi, usersApi, type Budget, type Bot, type ListUser } from '@/lib/api'
 import { useAuthStore, useRoleName } from '@/lib/auth'
 
@@ -79,7 +80,7 @@ function BudgetFormDialog({ open, onClose, onSuccess, editBudget, bots, users }:
               <Input type="date" value={form.period_end} onChange={f('period_end')} required />
             </div>
           </div>
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <StatusAlert type="error" message={error} />}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={saving}>

@@ -9,6 +9,7 @@ import { Separator } from '@/components/watermelon-ui/separator'
 import { Spinner } from '@/components/watermelon-ui/spinner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/watermelon-ui/dialog'
 import { DataTable, type Column } from '@/components/DataTable'
+import { StatusAlert } from '@/components/ConfirmDialog'
 import { customRolesApi, assignApi, type CustomRole, type MyPermission } from '@/lib/api'
 
 // ── Permission picker (only from user's own permissions) ─────────
@@ -151,7 +152,7 @@ function RoleFormDialog({
               />
             )}
           </div>
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <StatusAlert type="error" message={error} />}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={saving}>

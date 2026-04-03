@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/watermelon-ui/skeleton'
 import { Spinner } from '@/components/watermelon-ui/spinner'
 import { usersApi, rolesApi, customRolesApi, type ListUser } from '@/lib/api'
 import { useAuthStore } from '@/lib/auth'
+import { StatusAlert } from '@/components/ConfirmDialog'
 
 // Unified picker shape
 type PickerRole = {
@@ -225,7 +226,7 @@ export function UserFormDialog({ open, onClose, onSuccess, editUser }: Props) {
             )}
           </div>
 
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <StatusAlert type="error" message={error} />}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>

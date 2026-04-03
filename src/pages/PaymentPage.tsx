@@ -114,7 +114,7 @@ function PaymentFormDialog({ open, onClose, onSuccess, billings, userId }: {
 }
 
 export default function PaymentPage() {
-  const userId = useAuthStore((s) => s.user?.username ?? '')
+  const userId = useAuthStore((s) => s.user?.id ?? '')
   const [payments, setPayments] = useState<Payment[]>([])
   const [billings, setBillings] = useState<Billing[]>([])
   const [loading, setLoading] = useState(true)

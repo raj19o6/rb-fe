@@ -6,6 +6,7 @@ export type UserRole = { id: string; name: string; type: 'custom' | 'system' }
 export type UserPermission = { id: number; codename: string }
 
 export type User = {
+  id: string
   username: string
   user_type: string
   roles: UserRole[]
@@ -34,11 +35,13 @@ export const useAuthStore = create<AuthState>()(
         const { data } = await authApi.login(username, password)
         localStorage.setItem('access_token', data.access)
         localStorage.setItem('refresh_token', data.refresh)
+        // decode user_id from JWT payload
+        const payload = JSON.parse(atob(data.access.split('.')[1]))
         set({
           accessToken: data.access,
           refreshToken: data.refresh,
           isAuthenticated: true,
-          user: { username, user_type: '', roles: [], permissions: [] },
+          user: { id: payload.user_id ?? '', username, user_type: '', roles: [], permissions: [] },
         })
         await get().fetchUserProfile()
       },

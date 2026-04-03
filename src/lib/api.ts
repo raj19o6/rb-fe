@@ -145,7 +145,7 @@ export const botsApi = {
   list: () => api.get<Paginated<Bot>>('/api/v1/bot/'),
   get: (id: string) => api.get<Bot>(`/api/v1/bot/${id}/`),
   create: (payload: { name: string; description: string; status: string; created_by: string }) => api.post<Bot>('/api/v1/bot/', payload),
-  update: (id: string, payload: Partial<{ name: string; description: string; status: string }>) => api.put<Bot>(`/api/v1/bot/${id}/`, payload),
+  update: (id: string, payload: Partial<{ name: string; description: string; status: string }>) => api.patch<Bot>(`/api/v1/bot/${id}/`, payload),
   delete: (id: string) => api.delete(`/api/v1/bot/${id}/`),
 }
 

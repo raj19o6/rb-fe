@@ -6,6 +6,7 @@ import { Input } from '@/components/watermelon-ui/input'
 import { Skeleton } from '@/components/watermelon-ui/skeleton'
 import { Badge } from '@/components/watermelon-ui/badge'
 import { Can } from '@/components/Can'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 
 export type Column<T> = {
   key: string
@@ -29,33 +30,28 @@ type Props<T extends { id: string | number }> = {
   deletingId?: string | number | null
   emptyMessage?: string
   headerExtra?: React.ReactNode
+  deleteConfirmTitle?: string
+  deleteConfirmDescription?: (row: T) => string
 }
 
 export function DataTable<T extends { id: string | number }>({
-  columns,
-  data,
-  loading,
-  searchPlaceholder = 'Search…',
-  searchKeys = [],
-  onRefresh,
-  onEdit,
-  onDelete,
-  editPermission,
-  deletePermission,
-  viewPermission,
-  deletingId,
-  emptyMessage = 'No records found.',
+  columns, data, loading,
+  searchPlaceholder = 'Search…', searchKeys = [],
+  onRefresh, onEdit, onDelete,
+  editPermission, deletePermission, viewPermission,
+  deletingId, emptyMessage = 'No records found.',
   headerExtra,
+  deleteConfirmTitle = 'Delete Record',
+  deleteConfirmDescription = () => 'This action cannot be undone.',
 }: Props<T>) {
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [confirmRow, setConfirmRow] = useState<T | null>(null)
 
   const filtered = data.filter((row) => {
     if (!search.trim()) return true
-    return searchKeys.some((k) =>
-      String(row[k] ?? '').toLowerCase().includes(search.toLowerCase()),
-    )
+    return searchKeys.some((k) => String(row[k] ?? '').toLowerCase().includes(search.toLowerCase()))
   })
 
   const sorted = sortKey
@@ -113,10 +109,9 @@ export function DataTable<T extends { id: string | number }>({
                   {onDelete && deletePermission && (
                     <Can codename={deletePermission}>
                       <Button
-                        variant="ghost"
-                        size="icon-sm"
+                        variant="ghost" size="icon-sm"
                         className="text-destructive hover:text-destructive"
-                        onClick={() => onDelete(row)}
+                        onClick={() => setConfirmRow(row)}
                         disabled={deletingId === row.id}
                       >
                         {deletingId === row.id
@@ -141,18 +136,9 @@ export function DataTable<T extends { id: string | number }>({
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <div className="relative flex-1 max-w-xs">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={searchPlaceholder}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-8"
-            />
+            <Input placeholder={searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
           </div>
-          {search && (
-            <Badge variant="secondary" className="text-xs">
-              {sorted.length} result{sorted.length !== 1 ? 's' : ''}
-            </Badge>
-          )}
+          {search && <Badge variant="secondary" className="text-xs">{sorted.length} result{sorted.length !== 1 ? 's' : ''}</Badge>}
         </div>
         <div className="flex items-center gap-2">
           {headerExtra}
@@ -173,19 +159,26 @@ export function DataTable<T extends { id: string | number }>({
         <div className="flex flex-col items-center justify-center py-16 text-center rounded-md border border-border">
           <p className="text-sm text-muted-foreground">{search ? 'No results match your search.' : emptyMessage}</p>
         </div>
-      ) : (
-        viewPermission ? (
-          <Can codename={viewPermission} fallback={
-            <div className="flex items-center justify-center py-16 rounded-md border border-border">
-              <p className="text-sm text-muted-foreground">You don't have permission to view this data.</p>
-            </div>
-          }>
-            <div className="rounded-md border border-border overflow-hidden">{tableContent}</div>
-          </Can>
-        ) : (
+      ) : viewPermission ? (
+        <Can codename={viewPermission} fallback={
+          <div className="flex items-center justify-center py-16 rounded-md border border-border">
+            <p className="text-sm text-muted-foreground">You don't have permission to view this data.</p>
+          </div>
+        }>
           <div className="rounded-md border border-border overflow-hidden">{tableContent}</div>
-        )
+        </Can>
+      ) : (
+        <div className="rounded-md border border-border overflow-hidden">{tableContent}</div>
       )}
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        open={!!confirmRow}
+        onOpenChange={(v) => !v && setConfirmRow(null)}
+        title={deleteConfirmTitle}
+        description={confirmRow ? deleteConfirmDescription(confirmRow) : ''}
+        onConfirm={() => { if (confirmRow) { onDelete?.(confirmRow); setConfirmRow(null) } }}
+      />
     </div>
   )
 }

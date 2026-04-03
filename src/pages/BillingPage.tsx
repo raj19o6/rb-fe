@@ -8,6 +8,7 @@ import { Badge } from '@/components/watermelon-ui/badge'
 import { Spinner } from '@/components/watermelon-ui/spinner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/watermelon-ui/dialog'
 import { DataTable, type Column } from '@/components/DataTable'
+import { StatusAlert } from '@/components/ConfirmDialog'
 import { billingApi, botsApi, usersApi, type Billing, type Bot, type ListUser } from '@/lib/api'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -92,7 +93,7 @@ function BillingFormDialog({ open, onClose, onSuccess, editBilling, bots, users 
               <Input type="date" value={form.due_date} onChange={f('due_date')} required={!editBilling} />
             </div>
           </div>
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <StatusAlert type="error" message={error} />}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={saving}>

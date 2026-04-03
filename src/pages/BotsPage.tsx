@@ -8,6 +8,7 @@ import { Badge } from '@/components/watermelon-ui/badge'
 import { Spinner } from '@/components/watermelon-ui/spinner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/watermelon-ui/dialog'
 import { DataTable, type Column } from '@/components/DataTable'
+import { StatusAlert } from '@/components/ConfirmDialog'
 import { botsApi, type Bot } from '@/lib/api'
 import { useAuthStore } from '@/lib/auth'
 
@@ -23,7 +24,7 @@ const empty: FormState = { name: '', description: '', status: 'active' }
 function BotFormDialog({ open, onClose, onSuccess, editBot }: {
   open: boolean; onClose: () => void; onSuccess: () => void; editBot: Bot | null
 }) {
-  const userId = useAuthStore((s) => s.user?.username ?? '')
+  const userId = useAuthStore((s) => s.user?.id ?? '')
   const [form, setForm] = useState<FormState>(empty)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -97,6 +98,7 @@ export default function BotsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editBot, setEditBot] = useState<Bot | null>(null)
+  const [alert, setAlert] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
 
   const fetchBots = () => {
     setLoading(true)
@@ -106,9 +108,9 @@ export default function BotsPage() {
   useEffect(() => { fetchBots() }, [])
 
   const handleDelete = async (bot: Bot) => {
-    if (!confirm(`Delete bot "${bot.name}"?`)) return
     setDeletingId(bot.id)
-    try { await botsApi.delete(bot.id); setBots(p => p.filter(b => b.id !== bot.id)) }
+    try { await botsApi.delete(bot.id); setBots(p => p.filter(b => b.id !== bot.id)); setAlert({ type: 'success', message: `Bot "${bot.name}" deleted.` }) }
+    catch { setAlert({ type: 'error', message: 'Failed to delete bot.' }) }
     finally { setDeletingId(null) }
   }
 
@@ -155,6 +157,8 @@ export default function BotsPage() {
         </Button>
       </div>
 
+      {alert && <StatusAlert type={alert.type} message={alert.message} />}
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card><CardContent className="pt-4 pb-4"><p className="text-xs text-muted-foreground">Total</p><p className="text-2xl font-bold">{bots.length}</p></CardContent></Card>
         {Object.entries(statusCounts).map(([s, c]) => (
@@ -177,7 +181,8 @@ export default function BotsPage() {
             editPermission="change_customuser"
             deletePermission="delete_customuser"
             deletingId={deletingId}
-            emptyMessage="No bots yet. Create your first bot."
+            deleteConfirmTitle="Delete Bot"
+            deleteConfirmDescription={(b) => `Are you sure you want to delete "${b.name}"? This cannot be undone.`}
           />
         </CardContent>
       </Card>
