@@ -3,11 +3,15 @@ import { useTheme } from 'next-themes'
 import {
   Sun, Moon, LayoutDashboard, LogOut, Bot,
   ChevronRight, ShieldCheck, KeyRound,
-  UserPlus, Users, ClipboardList,
+  UserPlus, Users, ClipboardList, MoreHorizontal,
 } from 'lucide-react'
 import { Button } from '@/components/watermelon-ui/button'
 import { Avatar, AvatarFallback } from '@/components/watermelon-ui/avatar'
 import { Badge } from '@/components/watermelon-ui/badge'
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
+} from '@/components/watermelon-ui/dropdown-menu'
 import { useAuthStore, useRoleName } from '@/lib/auth'
 
 // Nav items visible per user_type
@@ -120,7 +124,7 @@ export default function Layout() {
 
         {/* User Profile Footer */}
         <div className="border-t border-border p-3">
-          <div className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-sidebar-accent transition-colors cursor-pointer">
+          <div className="flex items-center gap-3 rounded-lg px-2 py-2 bg-sidebar-accent/40">
             <Avatar className="h-8 w-8 shrink-0">
               <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
                 {initials}
@@ -132,15 +136,6 @@ export default function Layout() {
                 {roleName || 'Member'}
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="shrink-0 text-muted-foreground hover:text-destructive"
-              onClick={handleLogout}
-              title="Sign out"
-            >
-              <LogOut size={14} />
-            </Button>
           </div>
         </div>
       </aside>
@@ -156,11 +151,37 @@ export default function Layout() {
             <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </Button>
-            <Avatar className="h-8 w-8 cursor-pointer">
-              <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <MoreHorizontal size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel className="flex items-center gap-2 pb-1">
+                  <Avatar className="h-7 w-7">
+                    <AvatarFallback className="text-[10px] font-semibold bg-primary/10 text-primary">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-medium truncate">{user?.username ?? 'User'}</span>
+                    <span className="text-[10px] text-muted-foreground capitalize truncate">{roleName || 'Member'}</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+                  {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                  {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={handleLogout}>
+                  <LogOut size={14} />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 

@@ -109,9 +109,8 @@ export type TeamMember = {
   id: string
   username: string
   email: string
-  first_name: string
-  last_name: string
-  assigned_permissions: number[]
+  role: string
+  permissions_assigned: number[]
 }
 
 // ── Roles endpoints ─────────────────────────────────────────────
@@ -127,8 +126,23 @@ export const permissionsApi = {
   list: () => api.get<Permission[]>('/api/v1/permission/'),
 }
 
+
+
+export type ListUser = {
+  id: string
+  username: string
+  email: string
+  first_name: string
+  last_name: string
+  groups: number[]
+  is_staff: boolean
+  is_active: boolean
+  contact_no: number | null
+}
+
 // ── Users endpoints ──────────────────────────────────────────────
 export const usersApi = {
+  list: () => api.get<Paginated<ListUser>>('/api/v1/user/'),
   create: (payload: UserPayload) => api.post<AppUser>('/api/v1/createUser/', payload),
 }
 

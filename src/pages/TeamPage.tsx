@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Users, ShieldPlus, ShieldMinus, Check, ChevronDown, ChevronUp } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/watermelon-ui/card'
+import { Card, CardContent, CardHeader } from '@/components/watermelon-ui/card'
 import { Button } from '@/components/watermelon-ui/button'
 import { Badge } from '@/components/watermelon-ui/badge'
 import { Skeleton } from '@/components/watermelon-ui/skeleton'
@@ -50,7 +50,7 @@ function MemberCard({ member, allPermissions }: { member: TeamMember; allPermiss
   const [revokeSel, setRevokeSel] = useState<number[]>([])
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
-  const [currentPerms, setCurrentPerms] = useState<number[]>(member.assigned_permissions)
+  const [currentPerms, setCurrentPerms] = useState<number[]>(member.permissions_assigned)
 
   const toggle = (sel: number[], setSel: React.Dispatch<React.SetStateAction<number[]>>, id: number) =>
     setSel((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
@@ -92,7 +92,10 @@ function MemberCard({ member, allPermissions }: { member: TeamMember; allPermiss
             </div>
             <div>
               <p className="font-medium text-sm">{member.username}</p>
-              <p className="text-xs text-muted-foreground">{member.email}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <p className="text-xs text-muted-foreground">{member.email}</p>
+                <Badge variant="outline" className="text-[10px] capitalize px-1.5 py-0 h-4">{member.role}</Badge>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
