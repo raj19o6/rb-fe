@@ -5,7 +5,7 @@ import { Button } from '@/components/watermelon-ui/button'
 import { Badge } from '@/components/watermelon-ui/badge'
 import { Skeleton } from '@/components/watermelon-ui/skeleton'
 import { Spinner } from '@/components/watermelon-ui/spinner'
-import { assignApi, permissionsApi, type TeamMember, type Permission } from '@/lib/api'
+import { assignApi, type TeamMember, type Permission, type TeamPermission } from '@/lib/api'
 import { Can } from '@/components/Can'
 
 function PermissionSelector({
@@ -50,7 +50,7 @@ function MemberCard({ member, allPermissions }: { member: TeamMember; allPermiss
   const [revokeSel, setRevokeSel] = useState<number[]>([])
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
-  const [currentPerms, setCurrentPerms] = useState<number[]>(member.permissions_assigned)
+  const [currentPerms, setCurrentPerms] = useState<TeamPermission[]>(member.permissions_assigned)
 
   const toggle = (sel: number[], setSel: React.Dispatch<React.SetStateAction<number[]>>, id: number) =>
     setSel((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
@@ -60,7 +60,10 @@ function MemberCard({ member, allPermissions }: { member: TeamMember; allPermiss
     setBusy(true); setMsg('')
     try {
       await assignApi.assign(member.id, assignSel)
-      setCurrentPerms((p) => [...new Set([...p, ...assignSel])])
+      const added = allPermissions
+        .filter((p) => assignSel.includes(p.id))
+        .map((p) => ({ permission__id: p.id, permission__codename: p.codename, permission__name: p.name }))
+      setCurrentPerms((p) => [...p, ...added.filter((a) => !p.find((x) => x.permission__id === a.permission__id))])
       setAssignSel([])
       setMsg('Permissions assigned.')
     } catch { setMsg('Failed to assign.') }
@@ -72,15 +75,16 @@ function MemberCard({ member, allPermissions }: { member: TeamMember; allPermiss
     setBusy(true); setMsg('')
     try {
       await assignApi.revoke(member.id, revokeSel)
-      setCurrentPerms((p) => p.filter((x) => !revokeSel.includes(x)))
+      setCurrentPerms((p) => p.filter((x) => !revokeSel.includes(x.permission__id)))
       setRevokeSel([])
       setMsg('Permissions revoked.')
     } catch { setMsg('Failed to revoke.') }
     finally { setBusy(false) }
   }
 
-  const assignable = allPermissions.filter((p) => !currentPerms.includes(p.id))
-  const revokable = allPermissions.filter((p) => currentPerms.includes(p.id))
+  const currentIds = currentPerms.map((p) => p.permission__id)
+  const assignable = allPermissions.filter((p) => !currentIds.includes(p.id))
+  const revokable = allPermissions.filter((p) => currentIds.includes(p.id))
 
   return (
     <Card>
@@ -107,8 +111,8 @@ function MemberCard({ member, allPermissions }: { member: TeamMember; allPermiss
         </div>
         {currentPerms.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
-            {currentPerms.slice(0, 5).map((id) => (
-              <Badge key={id} variant="outline" className="text-[10px] font-mono">#{id}</Badge>
+            {currentPerms.slice(0, 5).map((p) => (
+              <Badge key={p.permission__id} variant="outline" className="text-[10px] font-mono">{p.permission__codename}</Badge>
             ))}
             {currentPerms.length > 5 && (
               <Badge variant="outline" className="text-[10px]">+{currentPerms.length - 5} more</Badge>
@@ -176,10 +180,17 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // Load all permissions in one call
+  // Load permissions from myPermissions (only what current user owns)
   const loadAllPermissions = useCallback(async () => {
-    const { data } = await permissionsApi.list()
-    setAllPermissions(data)
+    const { data } = await assignApi.myPermissions()
+    // map MyPermission shape → Permission shape used by PermissionSelector
+    const mapped: Permission[] = data.map((p) => ({
+      id: p.permission,
+      name: p.permission_name,
+      codename: p.permission_codename,
+      content_type: 0,
+    }))
+    setAllPermissions(mapped)
   }, [])
 
   useEffect(() => {

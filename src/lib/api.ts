@@ -84,6 +84,7 @@ export type UserPayload = {
   last_name: string
   contact_no: number
   groups: number[]
+  custom_role?: string
 }
 
 export type AppUser = {
@@ -96,13 +97,12 @@ export type AppUser = {
   groups: number[]
 }
 
-export type Assignment = {
-  id: number
-  assigned_to: string
-  assigned_to_username: string
-  permissions: number[]
-  permission_names?: string[]
-  assigned_at?: string
+export type Assignment = MyPermission
+
+export type TeamPermission = {
+  permission__id: number
+  permission__codename: string
+  permission__name: string
 }
 
 export type TeamMember = {
@@ -110,7 +110,24 @@ export type TeamMember = {
   username: string
   email: string
   role: string
-  permissions_assigned: number[]
+  permissions_assigned: TeamPermission[]
+}
+
+export type CustomRole = {
+  id: string
+  name: string
+  created_by: string
+  created_by_username: string
+  permissions: number[]
+  permission_details: { id: number; codename: string; name: string }[]
+  created_at: string
+}
+
+export const customRolesApi = {
+  list: () => api.get<Paginated<CustomRole>>('/api/v1/customrole/'),
+  create: (payload: { name: string; permissions: number[] }) => api.post<CustomRole>('/api/v1/customrole/', payload),
+  update: (id: string, payload: { name: string; permissions: number[] }) => api.patch<CustomRole>(`/api/v1/customrole/${id}/`, payload),
+  delete: (id: string) => api.delete(`/api/v1/customrole/${id}/`),
 }
 
 // ── Roles endpoints ─────────────────────────────────────────────
@@ -144,16 +161,30 @@ export type ListUser = {
 export const usersApi = {
   list: () => api.get<Paginated<ListUser>>('/api/v1/user/'),
   create: (payload: UserPayload) => api.post<AppUser>('/api/v1/createUser/', payload),
+  update: (id: string, payload: Partial<UserPayload>) => api.patch<AppUser>(`/api/v1/user/${id}/`, payload),
+  delete: (id: string) => api.delete(`/api/v1/user/${id}/`),
 }
 
 // ── Permission assignment endpoints ──────────────────────────────
+export type MyPermission = {
+  id: string
+  assigned_by: string
+  assigned_by_username: string
+  assigned_to: string
+  assigned_to_username: string
+  permission: number
+  permission_codename: string
+  permission_name: string
+  created_at: string
+}
+
 export const assignApi = {
   assign: (assigned_to: string, permissions: number[]) =>
     api.post('/api/v1/assignPermission/', { assigned_to, permissions }),
   revoke: (assigned_to: string, permissions: number[]) =>
     api.post('/api/v1/revokePermission/', { assigned_to, permissions }),
   myPermissions: () =>
-    api.get<{ permissions: number[]; permission_details: Permission[] }>('/api/v1/myPermissions/'),
+    api.get<MyPermission[]>('/api/v1/myPermissions/'),
   assignments: () =>
     api.get<Assignment[]>('/api/v1/assignments/'),
   myTeam: () =>
@@ -180,7 +211,7 @@ export const authApi = {
   getUserType: () =>
     api.get<{
       user_type: string
-      roles: { id: number; name: string }[]
+      roles: { id: string; name: string; type: 'custom' | 'system' }[]
       permissions: { id: number; codename: string }[]
     }>('/api/v1/isSuperUser/'),
 }

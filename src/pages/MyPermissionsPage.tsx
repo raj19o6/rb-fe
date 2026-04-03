@@ -4,17 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/watermelon-ui/badge'
 import { Skeleton } from '@/components/watermelon-ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/watermelon-ui/table'
-import { assignApi, type Permission } from '@/lib/api'
+import { assignApi, type MyPermission } from '@/lib/api'
 
 export default function MyPermissionsPage() {
-  const [permissions, setPermissions] = useState<Permission[]>([])
+  const [permissions, setPermissions] = useState<MyPermission[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     assignApi.myPermissions()
       .then(({ data }) => {
-        setPermissions(data.permission_details ?? [])
+        setPermissions(Array.isArray(data) ? data : [])
       })
       .catch(() => setError('Failed to load permissions.'))
       .finally(() => setLoading(false))
@@ -55,7 +55,7 @@ export default function MyPermissionsPage() {
                 <TableRow>
                   <TableHead>Permission Name</TableHead>
                   <TableHead>Codename</TableHead>
-                  <TableHead className="w-32">Category</TableHead>
+                  <TableHead className="w-32">Assigned By</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -66,14 +66,14 @@ export default function MyPermissionsPage() {
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10">
                           <KeyRound size={12} className="text-primary" />
                         </div>
-                        <span className="font-medium">{p.name}</span>
+                        <span className="font-medium">{p.permission_name}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="font-mono text-xs">{p.codename}</Badge>
+                      <Badge variant="outline" className="font-mono text-xs">{p.permission_codename}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="text-xs">Type {p.content_type}</Badge>
+                      <Badge variant="secondary" className="text-xs">{p.assigned_by_username}</Badge>
                     </TableCell>
                   </TableRow>
                 ))}

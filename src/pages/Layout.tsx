@@ -2,7 +2,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useTheme } from 'next-themes'
 import {
   Sun, Moon, LayoutDashboard, LogOut, Bot,
-  ChevronRight, ShieldCheck, KeyRound,
+  ChevronRight, ShieldCheck, KeyRound, ShieldPlus,
   UserPlus, Users, ClipboardList, MoreHorizontal,
 } from 'lucide-react'
 import { Button } from '@/components/watermelon-ui/button'
@@ -14,45 +14,66 @@ import {
 } from '@/components/watermelon-ui/dropdown-menu'
 import { useAuthStore, useRoleName } from '@/lib/auth'
 
-// Nav items visible per user_type
-const NAV_BY_ROLE: Record<string, { to: string; icon: React.ElementType; label: string }[]> = {
+type NavEntry = { to: string; icon: React.ElementType; label: string }
+
+const NAV_BY_ROLE: Record<string, NavEntry[]> = {
   superuser: [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/roles', icon: ShieldCheck, label: 'Roles' },
-    { to: '/permissions', icon: KeyRound, label: 'Permissions' },
-    { to: '/users', icon: UserPlus, label: 'Create User' },
-    { to: '/team', icon: Users, label: 'My Team' },
-    { to: '/assignments', icon: ClipboardList, label: 'Assignments' },
+    { to: '/dashboard/admin',   icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/roles',             icon: ShieldCheck,     label: 'Roles' },
+    { to: '/permissions',       icon: KeyRound,        label: 'Permissions' },
+    { to: '/users',             icon: UserPlus,        label: 'Users' },
+    { to: '/team',              icon: Users,           label: 'My Team' },
+    { to: '/assignments',       icon: ClipboardList,   label: 'Assignments' },
   ],
   manager: [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/users', icon: UserPlus, label: 'Create Client' },
-    { to: '/team', icon: Users, label: 'My Team' },
-    { to: '/assignments', icon: ClipboardList, label: 'Assignments' },
-    { to: '/my-permissions', icon: KeyRound, label: 'My Permissions' },
+    { to: '/dashboard/manager', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/users',             icon: UserPlus,        label: 'Create Client' },
+    { to: '/team',              icon: Users,           label: 'My Team' },
+    { to: '/custom-roles',      icon: ShieldPlus,      label: 'Custom Roles' },
+    { to: '/assignments',       icon: ClipboardList,   label: 'Assignments' },
+    { to: '/my-permissions',    icon: KeyRound,        label: 'My Permissions' },
   ],
   client: [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/users', icon: UserPlus, label: 'Create Agent' },
-    { to: '/team', icon: Users, label: 'My Team' },
-    { to: '/assignments', icon: ClipboardList, label: 'Assignments' },
-    { to: '/my-permissions', icon: KeyRound, label: 'My Permissions' },
+    { to: '/dashboard/client',  icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/users',             icon: UserPlus,        label: 'Create Agent' },
+    { to: '/team',              icon: Users,           label: 'My Team' },
+    { to: '/custom-roles',      icon: ShieldPlus,      label: 'Custom Roles' },
+    { to: '/assignments',       icon: ClipboardList,   label: 'Assignments' },
+    { to: '/my-permissions',    icon: KeyRound,        label: 'My Permissions' },
   ],
   agent: [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/my-permissions', icon: KeyRound, label: 'My Permissions' },
+    { to: '/dashboard/agent',   icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/my-permissions',    icon: KeyRound,        label: 'My Permissions' },
   ],
 }
 
-const DEFAULT_NAV = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-]
+// Permission codename → nav entry mapping for custom-role users
+const PERM_NAV_MAP: Record<string, NavEntry> = {
+  view_customuser:   { to: '/users', icon: UserPlus, label: 'Users' },
+  add_customuser:    { to: '/users', icon: UserPlus, label: 'Users' },
+  change_customuser: { to: '/users', icon: UserPlus, label: 'Users' },
+  delete_customuser: { to: '/users', icon: UserPlus, label: 'Users' },
+}
 
-function NavItem({
-  to, icon: Icon, label, badge,
-}: {
-  to: string; icon: React.ElementType; label: string; badge?: string
-}) {
+const DEFAULT_NAV: NavEntry[] = [{ to: '/dashboard/custom', icon: LayoutDashboard, label: 'Dashboard' }]
+
+function buildCustomNav(permissions: { id: number; codename: string }[]): NavEntry[] {
+  const seen = new Set<string>()
+  const items: NavEntry[] = [{ to: '/dashboard/custom', icon: LayoutDashboard, label: 'Dashboard' }]
+  seen.add('/dashboard/custom')
+
+  permissions.forEach((p) => {
+    const entry = PERM_NAV_MAP[p.codename]
+    if (entry && !seen.has(entry.to)) {
+      seen.add(entry.to)
+      items.push(entry)
+    }
+  })
+
+  return items
+}
+
+function NavItem({ to, icon: Icon, label, badge }: NavEntry & { badge?: string }) {
   const location = useLocation()
   const isActive = location.pathname === to
 
@@ -83,22 +104,31 @@ function NavItem({
 export default function Layout() {
   const { theme, setTheme } = useTheme()
   const navigate = useNavigate()
-  const { user, logout } = useAuthStore()
   const location = useLocation()
+  const { user, logout } = useAuthStore()
+
+  const roleName = useRoleName()
+
+  // For custom-role users, build nav dynamically from their permissions
+  const navItems = roleName === 'custom'
+    ? buildCustomNav(user?.permissions ?? [])
+    : (NAV_BY_ROLE[roleName] ?? DEFAULT_NAV)
+
+  // Display label: use role name from roles[0] for custom users
+  const displayRole = roleName === 'custom'
+    ? (user?.roles?.[0]?.name ?? 'custom')
+    : roleName
+
+  const pageLabel = navItems.find((n) => n.to === location.pathname)?.label ?? 'Dashboard'
+  const initials = user?.username?.slice(0, 2).toUpperCase() ?? 'RB'
 
   const handleLogout = () => {
     logout()
     navigate('/')
   }
 
-  const initials = user?.username?.slice(0, 2).toUpperCase() ?? 'RB'
-  const roleName = useRoleName()
-  const navItems = NAV_BY_ROLE[roleName] ?? DEFAULT_NAV
-  const pageLabel = navItems.find((n) => n.to === location.pathname)?.label ?? 'Dashboard'
-
   return (
     <div className="flex h-screen bg-background text-foreground">
-      {/* Sidebar */}
       <aside className="flex w-64 flex-col border-r border-border bg-sidebar">
 
         {/* Logo */}
@@ -112,17 +142,17 @@ export default function Layout() {
           </div>
         </div>
 
-        {/* Main Nav */}
+        {/* Nav */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
           <p className="px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
-            {roleName ? roleName.charAt(0).toUpperCase() + roleName.slice(1) : 'Menu'}
+            {displayRole ? displayRole.charAt(0).toUpperCase() + displayRole.slice(1) : 'Menu'}
           </p>
           {navItems.map((item) => (
             <NavItem key={item.to} {...item} />
           ))}
         </div>
 
-        {/* User Profile Footer */}
+        {/* Footer */}
         <div className="border-t border-border p-3">
           <div className="flex items-center gap-3 rounded-lg px-2 py-2 bg-sidebar-accent/40">
             <Avatar className="h-8 w-8 shrink-0">
@@ -133,30 +163,24 @@ export default function Layout() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate leading-none">{user?.username ?? 'User'}</p>
               <p className="text-[11px] text-muted-foreground mt-0.5 truncate capitalize">
-                {roleName || 'Member'}
+                {displayRole || 'Member'}
               </p>
             </div>
           </div>
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Topbar */}
         <header className="flex h-16 items-center justify-between border-b border-border px-6">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold">{pageLabel}</p>
-          </div>
+          <p className="text-sm font-semibold">{pageLabel}</p>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </Button>
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <MoreHorizontal size={16} />
-                </Button>
+                <Button variant="ghost" size="icon"><MoreHorizontal size={16} /></Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
                 <DropdownMenuLabel className="flex items-center gap-2 pb-1">
@@ -167,7 +191,7 @@ export default function Layout() {
                   </Avatar>
                   <div className="flex flex-col min-w-0">
                     <span className="text-sm font-medium truncate">{user?.username ?? 'User'}</span>
-                    <span className="text-[10px] text-muted-foreground capitalize truncate">{roleName || 'Member'}</span>
+                    <span className="text-[10px] text-muted-foreground capitalize truncate">{displayRole || 'Member'}</span>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -177,14 +201,12 @@ export default function Layout() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem variant="destructive" onClick={handleLogout}>
-                  <LogOut size={14} />
-                  Sign Out
+                  <LogOut size={14} /> Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </header>
-
         <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>

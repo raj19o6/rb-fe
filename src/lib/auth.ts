@@ -2,10 +2,10 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { authApi } from '@/lib/api'
 
-type UserRole = { id: number; name: string }
-type UserPermission = { id: number; codename: string }
+export type UserRole = { id: string; name: string; type: 'custom' | 'system' }
+export type UserPermission = { id: number; codename: string }
 
-type User = {
+export type User = {
   username: string
   user_type: string
   roles: UserRole[]
@@ -81,9 +81,25 @@ export const useAuthStore = create<AuthState>()(
 
 // ── Derived helpers ──────────────────────────────────────────────
 
-/** Primary role name from roles[0], e.g. "manager", "client", "agent" */
+/**
+ * Returns the effective role key used for nav/routing:
+ * - "superuser"  → user_type === 'superuser'
+ * - "manager"    → system role named "manager"
+ * - "client"     → system role named "client"
+ * - "agent"      → system role named "agent"
+ * - "custom"     → has a custom role (type === 'custom')
+ */
+export function getEffectiveRole(user: User | null): string {
+  if (!user) return ''
+  if (user.user_type === 'superuser') return 'superuser'
+  const role = user.roles?.[0]
+  if (!role) return ''
+  if (role.type === 'custom') return 'custom'
+  return role.name // "manager" | "client" | "agent"
+}
+
 export function useRoleName(): string {
-  return useAuthStore((s) => s.user?.roles?.[0]?.name ?? s.user?.user_type ?? '')
+  return useAuthStore((s) => getEffectiveRole(s.user))
 }
 
 /** Check if the current user has a specific permission codename */

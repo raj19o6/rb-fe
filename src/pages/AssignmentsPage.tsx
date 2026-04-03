@@ -52,8 +52,8 @@ export default function AssignmentsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Assigned To</TableHead>
-                  <TableHead>Permissions</TableHead>
-                  {assignments[0]?.assigned_at && <TableHead className="w-40">Date</TableHead>}
+                  <TableHead>Permission</TableHead>
+                  <TableHead className="w-40">Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -62,29 +62,23 @@ export default function AssignmentsPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
-                          {(a.assigned_to_username ?? '?').slice(0, 2).toUpperCase()}
+                          {a.assigned_to_username.slice(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-sm">{a.assigned_to_username ?? '—'}</p>
+                          <p className="font-medium text-sm">{a.assigned_to_username}</p>
                           <p className="text-[10px] font-mono text-muted-foreground">{String(a.assigned_to).slice(0, 12)}…</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {a.permissions.slice(0, 5).map((pid) => (
-                          <Badge key={pid} variant="secondary" className="text-xs font-mono">#{pid}</Badge>
-                        ))}
-                        {a.permissions.length > 5 && (
-                          <Badge variant="outline" className="text-xs">+{a.permissions.length - 5}</Badge>
-                        )}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm">{a.permission_name}</span>
+                        <Badge variant="outline" className="text-[10px] font-mono w-fit">{a.permission_codename}</Badge>
                       </div>
                     </TableCell>
-                    {a.assigned_at && (
-                      <TableCell className="text-xs text-muted-foreground">
-                        {new Date(a.assigned_at).toLocaleDateString()}
-                      </TableCell>
-                    )}
+                    <TableCell className="text-xs text-muted-foreground">
+                      {new Date(a.created_at).toLocaleDateString()}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/watermelon-ui/checkbox'
 import { Separator } from '@/components/watermelon-ui/separator'
 import { Spinner } from '@/components/watermelon-ui/spinner'
 import TextGradient from '@/components/watermelon-ui/text-gradient'
-import { useAuthStore } from '@/lib/auth'
+import { useAuthStore, getEffectiveRole } from '@/lib/auth'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -29,7 +29,14 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await login(username, password)
-      navigate('/dashboard')
+      const role = getEffectiveRole(useAuthStore.getState().user)
+      const dest = role === 'superuser' ? '/dashboard/admin'
+        : role === 'manager' ? '/dashboard/manager'
+        : role === 'client' ? '/dashboard/client'
+        : role === 'agent' ? '/dashboard/agent'
+        : role === 'custom' ? '/dashboard/custom'
+        : '/dashboard/admin'
+      navigate(dest)
     } catch {
       setError('Invalid username or password. Please try again.')
     } finally {
