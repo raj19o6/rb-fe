@@ -2,9 +2,14 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { authApi } from '@/lib/api'
 
+type UserRole = { id: number; name: string }
+type UserPermission = { id: number; codename: string }
+
 type User = {
   username: string
   user_type: string
+  roles: UserRole[]
+  permissions: UserPermission[]
 }
 
 type AuthState = {
@@ -14,7 +19,7 @@ type AuthState = {
   isAuthenticated: boolean
   login: (username: string, password: string) => Promise<void>
   logout: () => void
-  fetchUserType: () => Promise<void>
+  fetchUserProfile: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -33,9 +38,9 @@ export const useAuthStore = create<AuthState>()(
           accessToken: data.access,
           refreshToken: data.refresh,
           isAuthenticated: true,
-          user: { username, user_type: '' },
+          user: { username, user_type: '', roles: [], permissions: [] },
         })
-        await get().fetchUserType()
+        await get().fetchUserProfile()
       },
 
       logout: () => {
@@ -44,14 +49,21 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false })
       },
 
-      fetchUserType: async () => {
+      fetchUserProfile: async () => {
         try {
           const { data } = await authApi.getUserType()
           set((state) => ({
-            user: state.user ? { ...state.user, user_type: data.user_type } : null,
+            user: state.user
+              ? {
+                  ...state.user,
+                  user_type: data.user_type,
+                  roles: data.roles ?? [],
+                  permissions: data.permissions ?? [],
+                }
+              : null,
           }))
         } catch {
-          // silently fail — user_type stays empty
+          // silently fail
         }
       },
     }),
@@ -66,3 +78,18 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 )
+
+// ── Derived helpers ──────────────────────────────────────────────
+
+/** Primary role name from roles[0], e.g. "manager", "client", "agent" */
+export function useRoleName(): string {
+  return useAuthStore((s) => s.user?.roles?.[0]?.name ?? s.user?.user_type ?? '')
+}
+
+/** Check if the current user has a specific permission codename */
+export function useHasPermission(codename: string): boolean {
+  return useAuthStore((s) =>
+    s.user?.user_type === 'superuser' ||
+    (s.user?.permissions ?? []).some((p) => p.codename === codename),
+  )
+}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2, ShieldCheck, X, Check, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/watermelon-ui/card'
 import { Button } from '@/components/watermelon-ui/button'
@@ -13,90 +13,83 @@ import {
   TableHeader, TableRow,
 } from '@/components/watermelon-ui/table'
 import { rolesApi, permissionsApi, type Role, type Permission } from '@/lib/api'
+import { Can } from '@/components/Can'
 
 const emptyForm = { name: '', permissions: [] as number[] }
 
-// ── Infinite-scroll permissions list inside the form ─────────────
+// ── Permission picker (single fetch) ────────────────────────────
 function PermissionPicker({
   selected,
   onToggle,
+  onSelectAll,
+  onClearAll,
 }: {
   selected: number[]
   onToggle: (id: number) => void
+  onSelectAll: (ids: number[]) => void
+  onClearAll: () => void
 }) {
   const [items, setItems] = useState<Permission[]>([])
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
-  const [loading, setLoading] = useState(false)
-  const sentinelRef = useRef<HTMLDivElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [loading, setLoading] = useState(true)
 
-  const loadPage = useCallback(async (p: number) => {
-    if (loading) return
-    setLoading(true)
-    try {
-      const { data } = await permissionsApi.list(p)
-      setItems((prev) => p === 1 ? data.results : [...prev, ...data.results])
-      setHasMore(!!data.next)
-    } finally {
-      setLoading(false)
-    }
-  }, [loading])
-
-  // initial load
-  useEffect(() => { loadPage(1) }, [])
-
-  // observe sentinel — only fetch next page when sentinel is visible
   useEffect(() => {
-    const sentinel = sentinelRef.current
-    if (!sentinel) return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
-          const next = page + 1
-          setPage(next)
-          loadPage(next)
-        }
-      },
-      { root: containerRef.current, threshold: 0.1 },
-    )
-    observer.observe(sentinel)
-    return () => observer.disconnect()
-  }, [hasMore, loading, page, loadPage])
+    permissionsApi.list()
+      .then(({ data }) => setItems(data))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const allSelected = items.length > 0 && items.every((p) => selected.includes(p.id))
+  const someSelected = !allSelected && items.some((p) => selected.includes(p.id))
 
   return (
-    <div
-      ref={containerRef}
-      className="max-h-60 overflow-y-auto space-y-0.5 rounded-md border border-border p-2"
-    >
-      {items.map((perm) => {
-        const isSelected = selected.includes(perm.id)
-        return (
+    <div className="space-y-1.5">
+      {/* Select all / clear row */}
+      {!loading && items.length > 0 && (
+        <div className="flex items-center justify-between px-1">
           <button
-            key={perm.id}
             type="button"
-            onClick={() => onToggle(perm.id)}
-            className={`w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors ${
-              isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-foreground'
-            }`}
+            onClick={() => allSelected ? onClearAll() : onSelectAll(items.map((p) => p.id))}
+            className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
           >
-            <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-              isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-border'
+            <span className={`flex h-4 w-4 items-center justify-center rounded border ${
+              allSelected
+                ? 'bg-primary border-primary text-primary-foreground'
+                : someSelected
+                  ? 'bg-primary/30 border-primary'
+                  : 'border-border'
             }`}>
-              {isSelected && <Check size={10} />}
+              {(allSelected || someSelected) && <Check size={10} />}
             </span>
-            <span className="truncate flex-1">{perm.name}</span>
-            <span className="text-muted-foreground font-mono shrink-0">{perm.codename}</span>
+            {allSelected ? 'Deselect All' : 'Select All'}
           </button>
-        )
-      })}
+          <span className="text-[10px] text-muted-foreground">{selected.length}/{items.length}</span>
+        </div>
+      )}
 
-      {/* sentinel div — triggers next page load when scrolled into view */}
-      <div ref={sentinelRef} className="py-1 flex justify-center">
-        {loading && <Spinner size="sm" />}
-        {!hasMore && items.length > 0 && (
-          <span className="text-[10px] text-muted-foreground">All permissions loaded</span>
-        )}
+      <div className="max-h-60 overflow-y-auto space-y-0.5 rounded-md border border-border p-2">
+        {loading ? (
+          <div className="flex justify-center py-4"><Spinner size="sm" /></div>
+        ) : items.map((perm) => {
+          const isSelected = selected.includes(perm.id)
+          return (
+            <button
+              key={perm.id}
+              type="button"
+              onClick={() => onToggle(perm.id)}
+              className={`w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors ${
+                isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-foreground'
+              }`}
+            >
+              <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-border'
+              }`}>
+                {isSelected && <Check size={10} />}
+              </span>
+              <span className="truncate flex-1">{perm.name}</span>
+              <span className="text-muted-foreground font-mono shrink-0">{perm.codename}</span>
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -160,6 +153,12 @@ export default function RolesPage() {
     }))
   }
 
+  const selectAllPermissions = (ids: number[]) =>
+    setForm((f) => ({ ...f, permissions: ids }))
+
+  const clearAllPermissions = () =>
+    setForm((f) => ({ ...f, permissions: [] }))
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim()) { setError('Role name is required.'); return }
@@ -202,9 +201,11 @@ export default function RolesPage() {
             {total} role{total !== 1 ? 's' : ''} configured in the system.
           </p>
         </div>
-        <Button onClick={openCreate} className="gap-2">
-          <Plus size={16} /> New Role
-        </Button>
+        <Can codename="add_group">
+          <Button onClick={openCreate} className="gap-2">
+            <Plus size={16} /> New Role
+          </Button>
+        </Can>
       </div>
 
       {error && !showForm && <p className="text-sm text-destructive">{error}</p>}
@@ -269,20 +270,24 @@ export default function RolesPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon-sm" onClick={() => openEdit(role)}>
-                              <Pencil size={14} />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => handleDelete(role.id)}
-                              disabled={deletingId === role.id}
-                            >
-                              {deletingId === role.id
-                                ? <Loader2 size={14} className="animate-spin" />
-                                : <Trash2 size={14} />}
-                            </Button>
+                            <Can codename="change_group">
+                              <Button variant="ghost" size="icon-sm" onClick={() => openEdit(role)}>
+                                <Pencil size={14} />
+                              </Button>
+                            </Can>
+                            <Can codename="delete_group">
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => handleDelete(role.id)}
+                                disabled={deletingId === role.id}
+                              >
+                                {deletingId === role.id
+                                  ? <Loader2 size={14} className="animate-spin" />
+                                  : <Trash2 size={14} />}
+                              </Button>
+                            </Can>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -336,6 +341,8 @@ export default function RolesPage() {
                     <PermissionPicker
                       selected={form.permissions}
                       onToggle={togglePermission}
+                      onSelectAll={selectAllPermissions}
+                      onClearAll={clearAllPermissions}
                     />
                   </div>
 

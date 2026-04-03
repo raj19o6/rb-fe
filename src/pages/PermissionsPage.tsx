@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { KeyRound } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/watermelon-ui/card'
 import { Badge } from '@/components/watermelon-ui/badge'
 import { Skeleton } from '@/components/watermelon-ui/skeleton'
-import { Spinner } from '@/components/watermelon-ui/spinner'
 import { Input } from '@/components/watermelon-ui/input'
 import {
   Table, TableBody, TableCell, TableHead,
@@ -13,56 +12,16 @@ import { permissionsApi, type Permission } from '@/lib/api'
 
 export default function PermissionsPage() {
   const [items, setItems] = useState<Permission[]>([])
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
-  const [loading, setLoading] = useState(false)
-  const [initialLoad, setInitialLoad] = useState(true)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
 
-  const sentinelRef = useRef<HTMLDivElement>(null)
-  const tableContainerRef = useRef<HTMLDivElement>(null)
-
-  const loadPage = useCallback(async (p: number) => {
-    if (loading) return
-    setLoading(true)
-    setError('')
-    try {
-      const { data } = await permissionsApi.list(p)
-      setItems((prev) => p === 1 ? data.results : [...prev, ...data.results])
-      setTotal(data.count)
-      setHasMore(!!data.next)
-    } catch {
-      setError('Failed to load permissions.')
-    } finally {
-      setLoading(false)
-      setInitialLoad(false)
-    }
-  }, [loading])
-
-  // load first page on mount
-  useEffect(() => { loadPage(1) }, [])
-
-  // IntersectionObserver on sentinel — fires only when sentinel scrolls into view
   useEffect(() => {
-    const sentinel = sentinelRef.current
-    if (!sentinel) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
-          const next = page + 1
-          setPage(next)
-          loadPage(next)
-        }
-      },
-      { root: tableContainerRef.current, threshold: 0.1 },
-    )
-
-    observer.observe(sentinel)
-    return () => observer.disconnect()
-  }, [hasMore, loading, page, loadPage])
+    permissionsApi.list()
+      .then(({ data }) => setItems(data))
+      .catch(() => setError('Failed to load permissions.'))
+      .finally(() => setLoading(false))
+  }, [])
 
   const filtered = search.trim()
     ? items.filter(
@@ -77,9 +36,7 @@ export default function PermissionsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Permissions</h1>
-          <p className="text-sm text-muted-foreground">
-            {items.length} of {total} permission{total !== 1 ? 's' : ''} loaded.
-          </p>
+          <p className="text-sm text-muted-foreground">{items.length} permissions in the system.</p>
         </div>
         <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-sm">
           <KeyRound size={14} /> Read Only
@@ -93,9 +50,7 @@ export default function PermissionsPage() {
               <CardTitle className="flex items-center gap-2">
                 <KeyRound size={18} /> System Permissions
               </CardTitle>
-              <CardDescription>
-                Scroll down to load more. {total} total in the system.
-              </CardDescription>
+              <CardDescription>{items.length} total permissions.</CardDescription>
             </div>
             <Input
               placeholder="Search by name or codename..."
@@ -108,7 +63,7 @@ export default function PermissionsPage() {
         <CardContent>
           {error && <p className="text-sm text-destructive mb-4">{error}</p>}
 
-          {initialLoad ? (
+          {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 8 }).map((_, i) => (
                 <Skeleton key={i} className="h-10 w-full" />
@@ -122,10 +77,7 @@ export default function PermissionsPage() {
               </p>
             </div>
           ) : (
-            <div
-              ref={tableContainerRef}
-              className="max-h-[560px] overflow-y-auto rounded-md border border-border"
-            >
+            <div className="max-h-[560px] overflow-y-auto rounded-md border border-border">
               <Table>
                 <TableHeader className="sticky top-0 bg-card z-10">
                   <TableRow>
@@ -146,29 +98,15 @@ export default function PermissionsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {perm.codename}
-                        </Badge>
+                        <Badge variant="outline" className="font-mono text-xs">{perm.codename}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="text-xs">
-                          Type {perm.content_type}
-                        </Badge>
+                        <Badge variant="secondary" className="text-xs">Type {perm.content_type}</Badge>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-
-              {/* sentinel — triggers next page load when scrolled into view */}
-              <div ref={sentinelRef} className="flex items-center justify-center py-4">
-                {loading && <Spinner size="sm" />}
-                {!hasMore && !loading && (
-                  <span className="text-xs text-muted-foreground">
-                    All {total} permissions loaded
-                  </span>
-                )}
-              </div>
             </div>
           )}
         </CardContent>

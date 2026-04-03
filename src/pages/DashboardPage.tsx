@@ -10,7 +10,7 @@ import {
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts'
 import { TrendingUp, TrendingDown, Users, DollarSign, ShoppingCart, Activity, Download } from 'lucide-react'
-import { useAuthStore } from '@/lib/auth'
+import { useAuthStore, useRoleName } from '@/lib/auth'
 
 const areaData = [
   { month: 'Jan', revenue: 4000, users: 2400 },
@@ -64,6 +64,7 @@ const projects = [
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
+  const roleName = useRoleName()
 
   return (
     <div className="space-y-6">
@@ -72,8 +73,8 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-sm text-muted-foreground">
             Welcome back, <span className="font-medium text-foreground">{user?.username ?? 'User'}</span>!
-            {user?.user_type && (
-              <Badge variant="outline" className="ml-2 text-xs">{user.user_type}</Badge>
+            {roleName && (
+              <Badge variant="outline" className="ml-2 text-xs capitalize">{roleName}</Badge>
             )}
           </p>
         </div>

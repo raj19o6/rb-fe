@@ -71,21 +71,79 @@ api.interceptors.response.use(
   },
 )
 
-// ── Roles endpoints ─────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────
 export type Role = { id: number; name: string; permissions: number[] }
 export type Permission = { id: number; name: string; codename: string; content_type: number }
 export type Paginated<T> = { count: number; next: string | null; previous: string | null; results: T[] }
 
+export type UserPayload = {
+  username: string
+  password: string
+  email: string
+  first_name: string
+  last_name: string
+  contact_no: number
+  groups: number[]
+}
+
+export type AppUser = {
+  id: string
+  username: string
+  email: string
+  first_name: string
+  last_name: string
+  contact_no: number
+  groups: number[]
+}
+
+export type Assignment = {
+  id: number
+  assigned_to: string
+  assigned_to_username: string
+  permissions: number[]
+  permission_names?: string[]
+  assigned_at?: string
+}
+
+export type TeamMember = {
+  id: string
+  username: string
+  email: string
+  first_name: string
+  last_name: string
+  assigned_permissions: number[]
+}
+
+// ── Roles endpoints ─────────────────────────────────────────────
 export const rolesApi = {
   list: () => api.get<Paginated<Role>>('/api/v1/role/'),
   get: (id: number) => api.get<Role>(`/api/v1/role/${id}/`),
-  create: (payload: { name: string; permissions: number[] }) => api.post<Role>('/api/v1/role/', payload),
+  create: (payload: { name: string; permissions?: number[] }) => api.post<Role>('/api/v1/role/', payload),
   update: (id: number, payload: { name: string; permissions: number[] }) => api.put<Role>(`/api/v1/role/${id}/`, payload),
   delete: (id: number) => api.delete(`/api/v1/role/${id}/`),
 }
 
 export const permissionsApi = {
-  list: (page = 1) => api.get<Paginated<Permission>>(`/api/v1/permission/?page=${page}`),
+  list: () => api.get<Permission[]>('/api/v1/permission/'),
+}
+
+// ── Users endpoints ──────────────────────────────────────────────
+export const usersApi = {
+  create: (payload: UserPayload) => api.post<AppUser>('/api/v1/createUser/', payload),
+}
+
+// ── Permission assignment endpoints ──────────────────────────────
+export const assignApi = {
+  assign: (assigned_to: string, permissions: number[]) =>
+    api.post('/api/v1/assignPermission/', { assigned_to, permissions }),
+  revoke: (assigned_to: string, permissions: number[]) =>
+    api.post('/api/v1/revokePermission/', { assigned_to, permissions }),
+  myPermissions: () =>
+    api.get<{ permissions: number[]; permission_details: Permission[] }>('/api/v1/myPermissions/'),
+  assignments: () =>
+    api.get<Assignment[]>('/api/v1/assignments/'),
+  myTeam: () =>
+    api.get<TeamMember[]>('/api/v1/myTeam/'),
 }
 
 // ── Auth endpoints ──────────────────────────────────────────────
@@ -95,15 +153,6 @@ export const authApi = {
 
   refreshToken: (refresh: string) =>
     api.post<{ access: string; refresh: string }>('/auth/token/refresh/', { refresh }),
-
-  register: (payload: {
-    username: string
-    password: string
-    email: string
-    first_name: string
-    last_name: string
-    contact_no: number
-  }) => api.post('/api/v1/createUser/', payload),
 
   changePassword: (new_password: string) =>
     api.post('/api/v1/changeMyPassword/', { new_password }),
@@ -115,5 +164,9 @@ export const authApi = {
     api.post(`/auth/pass-reset/${temp_token}/`, { new_password }),
 
   getUserType: () =>
-    api.get<{ user_type: string }>('/api/v1/isSuperUser/'),
+    api.get<{
+      user_type: string
+      roles: { id: number; name: string }[]
+      permissions: { id: number; codename: string }[]
+    }>('/api/v1/isSuperUser/'),
 }
