@@ -7,7 +7,10 @@ import UsersPage from '@/pages/UsersPage'
 import TeamPage from '@/pages/TeamPage'
 import MyPermissionsPage from '@/pages/MyPermissionsPage'
 import CustomRolesPage from '@/pages/CustomRolesPage'
-import AssignmentsPage from '@/pages/AssignmentsPage'
+import BotsPage from '@/pages/BotsPage'
+import BudgetPage from '@/pages/BudgetPage'
+import BillingPage from '@/pages/BillingPage'
+import PaymentPage from '@/pages/PaymentPage'
 import Layout from '@/pages/Layout'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import { useAuthStore, useRoleName } from '@/lib/auth'
@@ -53,10 +56,12 @@ export default function App() {
 
           <Route path="/users"       element={<RoleRoute allowed={['superuser', 'manager', 'client', 'custom']}><UsersPage /></RoleRoute>} />
           <Route path="/team"        element={<RoleRoute allowed={['superuser', 'manager', 'client', 'custom']}><TeamPage /></RoleRoute>} />
-          <Route path="/assignments" element={<RoleRoute allowed={['superuser', 'manager', 'client', 'custom']}><AssignmentsPage /></RoleRoute>} />
-
           <Route path="/my-permissions" element={<RoleRoute allowed={['manager', 'client', 'agent', 'custom']}><MyPermissionsPage /></RoleRoute>} />
           <Route path="/custom-roles"   element={<RoleRoute allowed={['manager', 'client']}><CustomRolesPage /></RoleRoute>} />
+          <Route path="/bots"           element={<RoleRoute allowed={['superuser', 'manager']}><BotsPage /></RoleRoute>} />
+          <Route path="/budget"         element={<RoleRoute allowed={['superuser', 'manager', 'client']}><BudgetPage /></RoleRoute>} />
+          <Route path="/billing"        element={<RoleRoute allowed={['superuser', 'manager']}><BillingPage /></RoleRoute>} />
+          <Route path="/payments"       element={<RoleRoute allowed={['superuser', 'manager', 'client']}><PaymentPage /></RoleRoute>} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

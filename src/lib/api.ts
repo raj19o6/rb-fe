@@ -130,6 +130,95 @@ export const customRolesApi = {
   delete: (id: string) => api.delete(`/api/v1/customrole/${id}/`),
 }
 
+// ── Bot ─────────────────────────────────────────────────────────
+export type Bot = {
+  id: string
+  name: string
+  description: string
+  status: 'active' | 'inactive' | 'maintenance'
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export const botsApi = {
+  list: () => api.get<Paginated<Bot>>('/api/v1/bot/'),
+  get: (id: string) => api.get<Bot>(`/api/v1/bot/${id}/`),
+  create: (payload: { name: string; description: string; status: string; created_by: string }) => api.post<Bot>('/api/v1/bot/', payload),
+  update: (id: string, payload: Partial<{ name: string; description: string; status: string }>) => api.put<Bot>(`/api/v1/bot/${id}/`, payload),
+  delete: (id: string) => api.delete(`/api/v1/bot/${id}/`),
+}
+
+// ── Budget ───────────────────────────────────────────────────────
+export type Budget = {
+  id: string
+  user: string
+  username: string
+  bot: string
+  bot_name: string
+  allocated_amount: string
+  consumed_amount: string
+  remaining_amount: string
+  period_start: string
+  period_end: string
+  created_at: string
+  updated_at: string
+}
+
+export const budgetApi = {
+  list: () => api.get<Budget[]>('/api/v1/budget/'),
+  getMy: (bot_id?: string) => api.get<Budget[]>(`/api/v1/getBudget/${bot_id ? `?bot_id=${bot_id}` : ''}`),
+  create: (payload: { user: string; bot: string; allocated_amount: string; period_start: string; period_end: string }) =>
+    api.post<Budget>('/api/v1/budget/', payload),
+  update: (id: string, payload: Partial<{ allocated_amount: string; period_start: string; period_end: string }>) =>
+    api.patch<Budget>(`/api/v1/budget/${id}/`, payload),
+  delete: (id: string) => api.delete(`/api/v1/budget/${id}/`),
+}
+
+// ── Billing ──────────────────────────────────────────────────────
+export type Billing = {
+  id: string
+  user: string
+  username: string
+  bot: string
+  bot_name: string
+  amount: string
+  status: 'unpaid' | 'paid' | 'overdue'
+  billing_date: string
+  due_date: string
+  created_at: string
+}
+
+export const billingApi = {
+  list: () => api.get<Billing[]>('/api/v1/billing/'),
+  create: (payload: { user: string; bot: string; amount: string; status: string; billing_date: string; due_date: string }) =>
+    api.post<Billing>('/api/v1/billing/', payload),
+  update: (id: string, payload: Partial<{ amount: string; status: string; due_date: string }>) =>
+    api.patch<Billing>(`/api/v1/billing/${id}/`, payload),
+  delete: (id: string) => api.delete(`/api/v1/billing/${id}/`),
+}
+
+// ── Payment ──────────────────────────────────────────────────────
+export type Payment = {
+  id: string
+  billing: string
+  billing_status: string
+  paid_by: string
+  paid_by_username: string
+  amount: string
+  transaction_id: string
+  method: 'card' | 'bank_transfer' | 'cash' | 'online'
+  status: 'completed' | 'pending' | 'failed'
+  paid_at: string
+  created_at: string
+}
+
+export const paymentApi = {
+  list: () => api.get<Payment[]>('/api/v1/payment/'),
+  create: (payload: { billing: string; paid_by: string; amount: string; transaction_id: string; method: string; status: string; paid_at: string }) =>
+    api.post<Payment>('/api/v1/payment/', payload),
+}
+
 // ── Roles endpoints ─────────────────────────────────────────────
 export const rolesApi = {
   list: () => api.get<Paginated<Role>>('/api/v1/role/'),
@@ -207,6 +296,18 @@ export const authApi = {
 
   resetPassword: (temp_token: string, new_password: string) =>
     api.post(`/auth/pass-reset/${temp_token}/`, { new_password }),
+
+  getDashboard: () =>
+    api.get<{
+      bots: { total: number; active: number; inactive: number; maintenance: number }
+      executions: { total: number; success: number; failed: number; running: number; queued: number; cancelled: number }
+      budget: { total_allocated: number; total_consumed: number; total_remaining: number }
+      billing: { total_amount: number; paid: number; unpaid: number; overdue: number }
+      bugs: { open: { low: number; medium: number; high: number; critical: number }; total_open: number }
+      requests: { total: number; pending: number; approved: number; in_progress: number; completed: number; rejected: number }
+      notifications: { unread_count: number; recent: unknown[] }
+      users_roles?: { users: { total: number; active: number; inactive: number; superusers: number }; roles: { system_roles: number; custom_roles: number; total: number } }
+    }>('/api/v1/getDashboard/'),
 
   getUserType: () =>
     api.get<{

@@ -3,7 +3,7 @@ import { useTheme } from 'next-themes'
 import {
   Sun, Moon, LayoutDashboard, LogOut, Bot,
   ChevronRight, ShieldCheck, KeyRound, ShieldPlus,
-  UserPlus, Users, ClipboardList, MoreHorizontal,
+  UserPlus, Users, MoreHorizontal, DollarSign, Receipt, CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/watermelon-ui/button'
 import { Avatar, AvatarFallback } from '@/components/watermelon-ui/avatar'
@@ -23,14 +23,20 @@ const NAV_BY_ROLE: Record<string, NavEntry[]> = {
     { to: '/permissions',       icon: KeyRound,        label: 'Permissions' },
     { to: '/users',             icon: UserPlus,        label: 'Users' },
     { to: '/team',              icon: Users,           label: 'My Team' },
-    { to: '/assignments',       icon: ClipboardList,   label: 'Assignments' },
+    { to: '/bots',              icon: Bot,             label: 'Bots' },
+    { to: '/budget',            icon: DollarSign,      label: 'Budget' },
+    { to: '/billing',           icon: Receipt,         label: 'Billing' },
+    { to: '/payments',          icon: CreditCard,      label: 'Payments' },
   ],
   manager: [
     { to: '/dashboard/manager', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/users',             icon: UserPlus,        label: 'Create Client' },
     { to: '/team',              icon: Users,           label: 'My Team' },
     { to: '/custom-roles',      icon: ShieldPlus,      label: 'Custom Roles' },
-    { to: '/assignments',       icon: ClipboardList,   label: 'Assignments' },
+    { to: '/bots',              icon: Bot,             label: 'Bots' },
+    { to: '/budget',            icon: DollarSign,      label: 'Budget' },
+    { to: '/billing',           icon: Receipt,         label: 'Billing' },
+    { to: '/payments',          icon: CreditCard,      label: 'Payments' },
     { to: '/my-permissions',    icon: KeyRound,        label: 'My Permissions' },
   ],
   client: [
@@ -38,7 +44,8 @@ const NAV_BY_ROLE: Record<string, NavEntry[]> = {
     { to: '/users',             icon: UserPlus,        label: 'Create Agent' },
     { to: '/team',              icon: Users,           label: 'My Team' },
     { to: '/custom-roles',      icon: ShieldPlus,      label: 'Custom Roles' },
-    { to: '/assignments',       icon: ClipboardList,   label: 'Assignments' },
+    { to: '/budget',            icon: DollarSign,      label: 'My Budget' },
+    { to: '/payments',          icon: CreditCard,      label: 'Payments' },
     { to: '/my-permissions',    icon: KeyRound,        label: 'My Permissions' },
   ],
   agent: [

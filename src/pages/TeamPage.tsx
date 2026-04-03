@@ -5,7 +5,8 @@ import { Button } from '@/components/watermelon-ui/button'
 import { Badge } from '@/components/watermelon-ui/badge'
 import { Skeleton } from '@/components/watermelon-ui/skeleton'
 import { Spinner } from '@/components/watermelon-ui/spinner'
-import { assignApi, type TeamMember, type Permission, type TeamPermission } from '@/lib/api'
+import { assignApi, permissionsApi, type TeamMember, type Permission, type TeamPermission } from '@/lib/api'
+import { useAuthStore } from '@/lib/auth'
 import { Can } from '@/components/Can'
 
 function PermissionSelector({
@@ -180,18 +181,24 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // Load permissions from myPermissions (only what current user owns)
+  const isSuperuser = useAuthStore((s) => s.user?.user_type === 'superuser')
+
+  // Load permissions: all system permissions for superuser, own permissions for others
   const loadAllPermissions = useCallback(async () => {
-    const { data } = await assignApi.myPermissions()
-    // map MyPermission shape → Permission shape used by PermissionSelector
-    const mapped: Permission[] = data.map((p) => ({
-      id: p.permission,
-      name: p.permission_name,
-      codename: p.permission_codename,
-      content_type: 0,
-    }))
-    setAllPermissions(mapped)
-  }, [])
+    if (isSuperuser) {
+      const { data } = await permissionsApi.list()
+      setAllPermissions(data)
+    } else {
+      const { data } = await assignApi.myPermissions()
+      const mapped: Permission[] = data.map((p) => ({
+        id: p.permission,
+        name: p.permission_name,
+        codename: p.permission_codename,
+        content_type: 0,
+      }))
+      setAllPermissions(mapped)
+    }
+  }, [isSuperuser])
 
   useEffect(() => {
     Promise.all([
