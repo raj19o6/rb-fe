@@ -23,8 +23,12 @@ type ReportSummary = {
   workflow_name: string
   status: string
   executed_at: string
+  execution_time: number | null
   summary: { total: number; passed: number; failed: number; security_issues: number; success_rate: number }
   html_report_url: string
+  report?: {
+    summary?: { total: number; passed: number; failed: number; security_issues: number }
+  }
 }
 
 export default function WorkflowsPage() {
@@ -72,7 +76,8 @@ export default function WorkflowsPage() {
     setReportDialog({ open: true, loading: true, data: null, workflowName: w.name })
     try {
       const { data } = await workflowsApi.report(w.id)
-      setReportDialog({ open: true, loading: false, data: data as ReportSummary, workflowName: w.name })
+      const report = data as ReportSummary
+      setReportDialog({ open: true, loading: false, data: report, workflowName: w.name })
     } catch {
       setReportDialog({ open: false, loading: false, data: null, workflowName: '' })
       setAlert({ type: 'error', message: `No report available for "${w.name}" yet.` })
@@ -249,7 +254,6 @@ export default function WorkflowsPage() {
             <div className="flex items-center justify-center py-10"><Spinner /></div>
           ) : reportDialog.data ? (
             <div className="space-y-4">
-              {/* Status + date */}
               <div className="flex items-center justify-between">
                 <Badge variant="outline" className={`capitalize ${STATUS_COLORS[reportDialog.data.status] ?? ''}`}>
                   {reportDialog.data.status}
@@ -259,35 +263,22 @@ export default function WorkflowsPage() {
                 </span>
               </div>
 
-              {/* Summary stats */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-md border border-border p-3 flex items-center gap-2">
                   <CheckCircle size={16} className="text-green-600 shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Passed</p>
-                    <p className="text-lg font-bold text-green-600">{reportDialog.data.summary.passed}</p>
-                  </div>
+                  <div><p className="text-xs text-muted-foreground">Passed</p><p className="text-lg font-bold text-green-600">{reportDialog.data.summary.passed}</p></div>
                 </div>
                 <div className="rounded-md border border-border p-3 flex items-center gap-2">
                   <XCircle size={16} className="text-destructive shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Failed</p>
-                    <p className="text-lg font-bold text-destructive">{reportDialog.data.summary.failed}</p>
-                  </div>
+                  <div><p className="text-xs text-muted-foreground">Failed</p><p className="text-lg font-bold text-destructive">{reportDialog.data.summary.failed}</p></div>
                 </div>
                 <div className="rounded-md border border-border p-3 flex items-center gap-2">
                   <ShieldAlert size={16} className="text-yellow-600 shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Security Issues</p>
-                    <p className="text-lg font-bold text-yellow-600">{reportDialog.data.summary.security_issues}</p>
-                  </div>
+                  <div><p className="text-xs text-muted-foreground">Security Issues</p><p className="text-lg font-bold text-yellow-600">{reportDialog.data.summary.security_issues}</p></div>
                 </div>
                 <div className="rounded-md border border-border p-3 flex items-center gap-2">
                   <Percent size={16} className="text-primary shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Success Rate</p>
-                    <p className="text-lg font-bold text-primary">{reportDialog.data.summary.success_rate}%</p>
-                  </div>
+                  <div><p className="text-xs text-muted-foreground">Success Rate</p><p className="text-lg font-bold text-primary">{reportDialog.data.summary.success_rate}%</p></div>
                 </div>
               </div>
 
@@ -295,15 +286,16 @@ export default function WorkflowsPage() {
                 Total steps: <span className="font-medium text-foreground">{reportDialog.data.summary.total}</span>
               </p>
 
-              {/* HTML report link */}
               {reportDialog.data.html_report_url && (
                 <a
-                  href={`http://172.17.84.253:8000${reportDialog.data.html_report_url}`}
+                  href={reportDialog.data.html_report_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-primary underline"
+                  className="w-full"
                 >
-                  <FileText size={14} /> View Full HTML Report
+                  <Button className="w-full gap-2">
+                    <FileText size={14} /> View Full HTML Report
+                  </Button>
                 </a>
               )}
             </div>

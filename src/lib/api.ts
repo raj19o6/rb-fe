@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const BASE_URL = 'https://lknpz8c6-8000.inc1.devtunnels.ms/'
+const BASE_URL = 'https://api-richbot.btacode.com/'
 
 export const api = axios.create({
   baseURL: BASE_URL,
