@@ -30,7 +30,7 @@ pipeline {
             steps {
                 sh """
                 sudo rm -rf $DEPLOY_DIR/*
-                sudo cp -r build/* $DEPLOY_DIR/
+                sudo cp -r dist/* $DEPLOY_DIR/
                 """
             }
         }
