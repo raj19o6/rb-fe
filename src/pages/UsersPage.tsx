@@ -102,14 +102,7 @@ export default function UsersPage() {
       render: (u) => (
         <span className="text-sm text-muted-foreground">{u.contact_no ?? '—'}</span>
       ),
-    },
-    {
-      key: 'id',
-      label: 'ID',
-      render: (u) => (
-        <span className="font-mono text-[10px] text-muted-foreground">{u.id.slice(0, 8)}…</span>
-      ),
-    },
+    }
   ]
 
   // Stats by role

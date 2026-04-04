@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const BASE_URL = 'https://api-richbot.btacode.com/'
+const BASE_URL = 'https://api-richbot.btacode.com'
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -301,20 +301,22 @@ export const assignApi = {
 // ── Profile ─────────────────────────────────────────────────────
 export type UserProfile = {
   id: string
-  user: string
-  username: string
-  email: string
-  first_name: string
-  last_name: string
-  contact_no: string
-  profile_picture: string | null
-  bio: string
-  created_at: string
+  user: {
+    id: string
+    username: string
+    email: string
+    first_name: string
+    last_name: string
+    is_staff: boolean
+    is_active: boolean
+    groups: { id: number; name: string }[]
+  }
+  contact_no: number | null
 }
 
 export const profileApi = {
-  get: () => api.get<UserProfile>('/api/v1/userprofile/'),
-  update: (id: string, payload: Partial<Pick<UserProfile, 'first_name' | 'last_name' | 'contact_no' | 'bio'>>) =>
+  get: () => api.get<Paginated<UserProfile>>('/api/v1/userprofile/'),
+  update: (id: string, payload: { first_name?: string; last_name?: string; contact_no?: number | null }) =>
     api.patch<UserProfile>(`/api/v1/userprofile/${id}/`, payload),
 }
 
@@ -387,6 +389,36 @@ export type ExecutionReport = {
 export const executionsApi = {
   list: () => api.get<Execution[]>('/api/v1/executions/'),
   reports: () => api.get<ExecutionReport[]>('/api/v1/executionreports/'),
+}
+
+// ── Bot Requests ────────────────────────────────────────────────
+export type BotRequest = {
+  id: string
+  bot: string
+  bot_name: string
+  title: string
+  description: string
+  status: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'
+  rejection_reason: string | null
+  requested_by: string
+  requested_by_username: string
+  assigned_to: string | null
+  assigned_to_username: string | null
+  created_at: string
+  updated_at: string
+}
+
+export const requestsApi = {
+  list: () => api.get<Paginated<BotRequest>>('/api/v1/requests/'),
+  create: (payload: { bot: string; title: string; description: string }) =>
+    api.post<BotRequest>('/api/v1/requests/', payload),
+  approve: (id: string) => api.post(`/api/v1/requests/${id}/approve/`),
+  reject: (id: string, reason: string) =>
+    api.post(`/api/v1/requests/${id}/reject/`, { reason }),
+}
+
+export const availableBotsApi = {
+  list: () => api.get<Bot[]>('/api/v1/bot/available/'),
 }
 
 // ── Auth endpoints ──────────────────────────────────────────────

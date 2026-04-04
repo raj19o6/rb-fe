@@ -247,7 +247,7 @@ type AlertDialogOverlayPrimitiveProps = Omit<
   HTMLMotionProps<'div'>;
 
 function AlertDialogOverlayPrimitive({
-  transition = { duration: 0.2, ease: 'easeInOut' },
+  transition = { duration: 0.15, ease: 'easeOut' },
   ...props
 }: AlertDialogOverlayPrimitiveProps) {
   return (
@@ -258,9 +258,9 @@ function AlertDialogOverlayPrimitive({
     >
       <motion.div
         key="alert-dialog-overlay"
-        initial={{ opacity: 0, filter: 'blur(4px)' }}
-        animate={{ opacity: 1, filter: 'blur(0px)' }}
-        exit={{ opacity: 0, filter: 'blur(4px)' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         transition={transition}
         {...props}
       />
@@ -283,14 +283,9 @@ function AlertDialogContentPrimitive({
   onOpenAutoFocus,
   onCloseAutoFocus,
   onEscapeKeyDown,
-  transition = { type: 'spring', stiffness: 150, damping: 25 },
+  transition = { duration: 0.18, ease: 'easeOut' },
   ...props
 }: AlertDialogContentPrimitiveProps) {
-  const initialRotation =
-    from === 'bottom' || from === 'left' ? '20deg' : '-20deg';
-  const isVertical = from === 'top' || from === 'bottom';
-  const rotateAxis = isVertical ? 'rotateX' : 'rotateY';
-
   return (
     <AlertDialogPrime.Content
       forceMount
@@ -301,21 +296,9 @@ function AlertDialogContentPrimitive({
       <motion.div
         key="alert-dialog-content"
         data-slot="alert-dialog-content"
-        initial={{
-          opacity: 0,
-          filter: 'blur(4px)',
-          transform: `perspective(500px) ${rotateAxis}(${initialRotation}) scale(0.8)`,
-        }}
-        animate={{
-          opacity: 1,
-          filter: 'blur(0px)',
-          transform: `perspective(500px) ${rotateAxis}(0deg) scale(1)`,
-        }}
-        exit={{
-          opacity: 0,
-          filter: 'blur(4px)',
-          transform: `perspective(500px) ${rotateAxis}(${initialRotation}) scale(0.8)`,
-        }}
+        initial={{ opacity: 0, scale: 0.95, y: -8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: -8 }}
         transition={transition}
         {...props}
       />

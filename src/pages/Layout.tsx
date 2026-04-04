@@ -2,9 +2,9 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useTheme } from 'next-themes'
 import {
   Sun, Moon, LayoutDashboard, LogOut, Bot,
-  ChevronRight, ShieldCheck, KeyRound, ShieldPlus,
+  ChevronRight, ShieldCheck, ShieldPlus,
   UserPlus, Users, MoreHorizontal, DollarSign, Receipt, CreditCard, Link,
-  GitBranch, Zap, UserCircle,
+  GitBranch, Zap, UserCircle, ClipboardList,
 } from 'lucide-react'
 import { Button } from '@/components/watermelon-ui/button'
 import { Avatar, AvatarFallback } from '@/components/watermelon-ui/avatar'
@@ -21,11 +21,11 @@ const NAV_BY_ROLE: Record<string, NavEntry[]> = {
   superuser: [
     { to: '/dashboard/admin',   icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/roles',             icon: ShieldCheck,     label: 'Roles' },
-    { to: '/permissions',       icon: KeyRound,        label: 'Permissions' },
     { to: '/users',             icon: UserPlus,        label: 'Users' },
     { to: '/team',              icon: Users,           label: 'My Team' },
     { to: '/bots',              icon: Bot,             label: 'Bots' },
     { to: '/bot-allotments',    icon: Link,            label: 'Bot Allotments' },
+    { to: '/requests',          icon: ClipboardList,   label: 'Requests' },
     { to: '/budget',            icon: DollarSign,      label: 'Budget' },
     { to: '/billing',           icon: Receipt,         label: 'Billing' },
     { to: '/payments',          icon: CreditCard,      label: 'Payments' },
@@ -36,15 +36,15 @@ const NAV_BY_ROLE: Record<string, NavEntry[]> = {
     { to: '/team',              icon: Users,           label: 'My Team' },
     { to: '/custom-roles',      icon: ShieldPlus,      label: 'Custom Roles' },
     { to: '/bots',              icon: Bot,             label: 'Bots' },
+    { to: '/requests',          icon: ClipboardList,   label: 'Requests' },
     { to: '/budget',            icon: DollarSign,      label: 'Budget' },
     { to: '/billing',           icon: Receipt,         label: 'Billing' },
     { to: '/payments',          icon: CreditCard,      label: 'Payments' },
-    { to: '/my-permissions',    icon: KeyRound,        label: 'My Permissions' },
   ],
   client: [
     { to: '/dashboard/client',  icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/profile',           icon: UserCircle,      label: 'My Profile' },
     { to: '/bots',              icon: Bot,             label: 'Bots' },
+    { to: '/requests',          icon: ClipboardList,   label: 'My Requests' },
     { to: '/workflows',         icon: GitBranch,       label: 'Workflows' },
     { to: '/executions',        icon: Zap,             label: 'Executions' },
     { to: '/budget',            icon: DollarSign,      label: 'My Budget' },
@@ -123,9 +123,6 @@ export default function Layout() {
 
         {/* Nav */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          <p className="px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
-            {displayRole ? displayRole.charAt(0).toUpperCase() + displayRole.slice(1) : 'Menu'}
-          </p>
           {navItems.map((item) => (
             <NavItem key={item.to} {...item} />
           ))}
@@ -133,19 +130,7 @@ export default function Layout() {
 
         {/* Footer */}
         <div className="border-t border-border p-3">
-          <div className="flex items-center gap-3 rounded-lg px-2 py-2 bg-sidebar-accent/40">
-            <Avatar className="h-8 w-8 shrink-0">
-              <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate leading-none">{user?.username ?? 'User'}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5 truncate capitalize">
-                {displayRole || 'Member'}
-              </p>
-            </div>
-          </div>
+          <p className="text-[10px] text-muted-foreground text-center w-full">v26.0.1</p>
         </div>
       </aside>
 
