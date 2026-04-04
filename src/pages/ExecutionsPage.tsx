@@ -109,33 +109,45 @@ export default function ExecutionsPage() {
     },
     {
       key: 'summary', label: 'Pass / Fail',
-      render: (r) => (
-        <span className="text-xs">
-          <span className="text-green-600 font-medium">{r.summary?.passed ?? '—'}</span>
-          <span className="text-muted-foreground"> / </span>
-          <span className="text-destructive font-medium">{r.summary?.failed ?? '—'}</span>
-        </span>
-      ),
+      render: (r) => {
+        const summary = r.report?.summary ?? r.summary
+        return (
+          <span className="text-xs">
+            <span className="text-green-600 font-medium">{summary?.passed ?? '—'}</span>
+            <span className="text-muted-foreground"> / </span>
+            <span className="text-destructive font-medium">{summary?.failed ?? '—'}</span>
+          </span>
+        )
+      },
     },
     {
       key: 'success_rate', label: 'Rate',
-      render: (r) => (
-        <span className={`text-sm font-semibold ${
-          r.summary?.success_rate >= 80 ? 'text-green-600'
-          : r.summary?.success_rate >= 50 ? 'text-yellow-600'
-          : 'text-destructive'
-        }`}>
-          {r.summary?.success_rate != null ? `${r.summary.success_rate}%` : '—'}
-        </span>
-      ),
+      render: (r) => {
+        const summary = r.report?.summary ?? r.summary
+        const total = summary?.total
+        const passed = summary?.passed
+        const rate = total ? Math.round((passed! / total) * 100) : (r.summary?.success_rate ?? null)
+        return (
+          <span className={`text-sm font-semibold ${
+            rate != null && rate >= 80 ? 'text-green-600'
+            : rate != null && rate >= 50 ? 'text-yellow-600'
+            : 'text-destructive'
+          }`}>
+            {rate != null ? `${rate}%` : '—'}
+          </span>
+        )
+      },
     },
     {
       key: 'executed_at', label: 'Date',
-      render: (r) => (
-        <span className="text-xs text-muted-foreground">
-          {r.executed_at ? new Date(r.executed_at).toLocaleDateString() : '—'}
-        </span>
-      ),
+      render: (r) => {
+        const date = r.executed_at ?? r.report?.timestamp
+        return (
+          <span className="text-xs text-muted-foreground">
+            {date ? new Date(date).toLocaleDateString() : '—'}
+          </span>
+        )
+      },
     },
     {
       key: 'detail', label: '',
@@ -243,49 +255,68 @@ export default function ExecutionsPage() {
                   {reportDetail.status}
                 </Badge>
                 <span className="text-xs text-muted-foreground">
-                  {reportDetail.executed_at ? new Date(reportDetail.executed_at).toLocaleString() : '—'}
+                  {(reportDetail.executed_at ?? reportDetail.report?.timestamp)
+                    ? new Date(reportDetail.executed_at ?? reportDetail.report!.timestamp).toLocaleString()
+                    : '—'}
                 </span>
               </div>
 
               {/* Summary stat cards */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-md border border-border p-3 flex items-center gap-2">
-                  <CheckCircle size={16} className="text-green-600 shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Passed</p>
-                    <p className="text-lg font-bold text-green-600">{reportDetail.summary?.passed ?? '—'}</p>
-                  </div>
-                </div>
-                <div className="rounded-md border border-border p-3 flex items-center gap-2">
-                  <XCircle size={16} className="text-destructive shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Failed</p>
-                    <p className="text-lg font-bold text-destructive">{reportDetail.summary?.failed ?? '—'}</p>
-                  </div>
-                </div>
-                <div className="rounded-md border border-border p-3 flex items-center gap-2">
-                  <ShieldAlert size={16} className="text-yellow-600 shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Security Issues</p>
-                    <p className="text-lg font-bold text-yellow-600">{reportDetail.summary?.security_issues ?? '—'}</p>
-                  </div>
-                </div>
-                <div className="rounded-md border border-border p-3 flex items-center gap-2">
-                  <Percent size={16} className="text-primary shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Success Rate</p>
-                    <p className="text-lg font-bold text-primary">
-                      {reportDetail.summary?.success_rate != null ? `${reportDetail.summary.success_rate}%` : '—'}
+              {(() => {
+                const summary = reportDetail.report?.summary ?? reportDetail.summary
+                const total = summary?.total
+                const passed = summary?.passed
+                const rate = total ? Math.round((passed! / total) * 100) : (reportDetail.summary?.success_rate ?? null)
+                return (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-md border border-border p-3 flex items-center gap-2">
+                        <CheckCircle size={16} className="text-green-600 shrink-0" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Passed</p>
+                          <p className="text-lg font-bold text-green-600">{summary?.passed ?? '—'}</p>
+                        </div>
+                      </div>
+                      <div className="rounded-md border border-border p-3 flex items-center gap-2">
+                        <XCircle size={16} className="text-destructive shrink-0" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Failed</p>
+                          <p className="text-lg font-bold text-destructive">{summary?.failed ?? '—'}</p>
+                        </div>
+                      </div>
+                      <div className="rounded-md border border-border p-3 flex items-center gap-2">
+                        <ShieldAlert size={16} className="text-yellow-600 shrink-0" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Security Issues</p>
+                          <p className="text-lg font-bold text-yellow-600">{summary?.security_issues ?? '—'}</p>
+                        </div>
+                      </div>
+                      <div className="rounded-md border border-border p-3 flex items-center gap-2">
+                        <Percent size={16} className="text-primary shrink-0" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Success Rate</p>
+                          <p className="text-lg font-bold text-primary">{rate != null ? `${rate}%` : '—'}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Total steps: <span className="font-medium text-foreground">{summary?.total ?? '—'}</span>
                     </p>
-                  </div>
-                </div>
-              </div>
+                  </>
+                )
+              })()}
 
-              <p className="text-xs text-muted-foreground">
-                Total steps: <span className="font-medium text-foreground">{reportDetail.summary?.total ?? '—'}</span>
-              </p>
-
-              {/* HTML report link */}
+              {/* HTML report */}
+              {reportDetail.html_report && (
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-primary">View HTML Report</summary>
+                  <iframe
+                    srcDoc={reportDetail.html_report}
+                    className="w-full h-48 mt-2 border border-border rounded"
+                    sandbox="allow-same-origin"
+                  />
+                </details>
+              )}
               {reportDetail.html_report_url && (
                 <a
                   href={`${BASE_URL}${reportDetail.html_report_url}`}

@@ -356,15 +356,30 @@ export type ExecutionReport = {
   workflow_id: string
   workflow_name: string
   status: string
-  executed_at: string
-  summary: {
+  execution_time?: number
+  report?: {
+    template: string
+    url: string
+    timestamp: string
+    summary: {
+      total: number
+      passed: number
+      failed: number
+      security_issues: number
+    }
+  }
+  html_report?: string
+  json_report?: { workflow: string; total: number; passed: number; failed: number }
+  // legacy fields
+  executed_at?: string
+  summary?: {
     total: number
     passed: number
     failed: number
     security_issues: number
-    success_rate: number
+    success_rate?: number
   }
-  html_report_url: string
+  html_report_url?: string
 }
 
 export const executionsApi = {
