@@ -5,10 +5,6 @@ pipeline {
         DEPLOY_DIR = "/var/www/richbot"
     }
 
-    tools {
-        nodejs "nodejs-lts"  // Make sure you configured NodeJS in Jenkins Global Tools
-    }
-
     stages {
         stage('Checkout') {
             steps {
