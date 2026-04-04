@@ -2,18 +2,23 @@ pipeline {
     agent any
 
     environment {
-        DEPLOY_DIR = "/var/www/rb-fe"
+        DEPLOY_DIR = "/var/www/richbot"
+    }
+
+    tools {
+        nodejs "nodejs-lts"  // Make sure you configured NodeJS in Jenkins Global Tools
     }
 
     stages {
-
-        stage('Clone') {
+        stage('Checkout') {
             steps {
-                git branch: 'main', url: 'git@github.com:raj19o6/rb-fe.git'
+                git branch: 'main',
+                    url: 'git@github.com:raj19o6/rb-fe.git',
+                    credentialsId: 'github-ssh-rb-fe'
             }
         }
 
-        stage('Install') {
+        stage('Install Dependencies') {
             steps {
                 sh 'npm install'
             }
@@ -27,20 +32,20 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh '''
-                mkdir -p $DEPLOY_DIR
-                rm -rf $DEPLOY_DIR/*
-                
-                if [ -d "dist" ]; then
-                    cp -r dist/* $DEPLOY_DIR/
-                elif [ -d "build" ]; then
-                    cp -r build/* $DEPLOY_DIR/
-                else
-                    echo "No build folder found!"
-                    exit 1
-                fi
-                '''
+                sh """
+                sudo rm -rf $DEPLOY_DIR/*
+                sudo cp -r build/* $DEPLOY_DIR/
+                """
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Frontend deployed successfully to https://richbot.btacode.com/'
+        }
+        failure {
+            echo 'Build failed!'
         }
     }
 }

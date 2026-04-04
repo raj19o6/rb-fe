@@ -3,7 +3,8 @@ import { useTheme } from 'next-themes'
 import {
   Sun, Moon, LayoutDashboard, LogOut, Bot,
   ChevronRight, ShieldCheck, KeyRound, ShieldPlus,
-  UserPlus, Users, MoreHorizontal, DollarSign, Receipt, CreditCard,
+  UserPlus, Users, MoreHorizontal, DollarSign, Receipt, CreditCard, Link,
+  GitBranch, Zap, UserCircle,
 } from 'lucide-react'
 import { Button } from '@/components/watermelon-ui/button'
 import { Avatar, AvatarFallback } from '@/components/watermelon-ui/avatar'
@@ -24,6 +25,7 @@ const NAV_BY_ROLE: Record<string, NavEntry[]> = {
     { to: '/users',             icon: UserPlus,        label: 'Users' },
     { to: '/team',              icon: Users,           label: 'My Team' },
     { to: '/bots',              icon: Bot,             label: 'Bots' },
+    { to: '/bot-allotments',    icon: Link,            label: 'Bot Allotments' },
     { to: '/budget',            icon: DollarSign,      label: 'Budget' },
     { to: '/billing',           icon: Receipt,         label: 'Billing' },
     { to: '/payments',          icon: CreditCard,      label: 'Payments' },
@@ -41,43 +43,14 @@ const NAV_BY_ROLE: Record<string, NavEntry[]> = {
   ],
   client: [
     { to: '/dashboard/client',  icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/users',             icon: UserPlus,        label: 'Create Agent' },
-    { to: '/team',              icon: Users,           label: 'My Team' },
-    { to: '/custom-roles',      icon: ShieldPlus,      label: 'Custom Roles' },
+    { to: '/profile',           icon: UserCircle,      label: 'My Profile' },
+    { to: '/bots',              icon: Bot,             label: 'Bots' },
+    { to: '/workflows',         icon: GitBranch,       label: 'Workflows' },
+    { to: '/executions',        icon: Zap,             label: 'Executions' },
     { to: '/budget',            icon: DollarSign,      label: 'My Budget' },
+    { to: '/billing',           icon: Receipt,         label: 'Billing' },
     { to: '/payments',          icon: CreditCard,      label: 'Payments' },
-    { to: '/my-permissions',    icon: KeyRound,        label: 'My Permissions' },
   ],
-  agent: [
-    { to: '/dashboard/agent',   icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/my-permissions',    icon: KeyRound,        label: 'My Permissions' },
-  ],
-}
-
-// Permission codename → nav entry mapping for custom-role users
-const PERM_NAV_MAP: Record<string, NavEntry> = {
-  view_customuser:   { to: '/users', icon: UserPlus, label: 'Users' },
-  add_customuser:    { to: '/users', icon: UserPlus, label: 'Users' },
-  change_customuser: { to: '/users', icon: UserPlus, label: 'Users' },
-  delete_customuser: { to: '/users', icon: UserPlus, label: 'Users' },
-}
-
-const DEFAULT_NAV: NavEntry[] = [{ to: '/dashboard/custom', icon: LayoutDashboard, label: 'Dashboard' }]
-
-function buildCustomNav(permissions: { id: number; codename: string }[]): NavEntry[] {
-  const seen = new Set<string>()
-  const items: NavEntry[] = [{ to: '/dashboard/custom', icon: LayoutDashboard, label: 'Dashboard' }]
-  seen.add('/dashboard/custom')
-
-  permissions.forEach((p) => {
-    const entry = PERM_NAV_MAP[p.codename]
-    if (entry && !seen.has(entry.to)) {
-      seen.add(entry.to)
-      items.push(entry)
-    }
-  })
-
-  return items
 }
 
 function NavItem({ to, icon: Icon, label, badge }: NavEntry & { badge?: string }) {
@@ -116,10 +89,9 @@ export default function Layout() {
 
   const roleName = useRoleName()
 
-  // For custom-role users, build nav dynamically from their permissions
   const navItems = roleName === 'custom'
-    ? buildCustomNav(user?.permissions ?? [])
-    : (NAV_BY_ROLE[roleName] ?? DEFAULT_NAV)
+    ? [{ to: '/dashboard/custom', icon: LayoutDashboard, label: 'Dashboard' }, { to: '/users', icon: UserPlus, label: 'Users' }]
+    : NAV_BY_ROLE[roleName] ?? [{ to: '/dashboard/custom', icon: LayoutDashboard, label: 'Dashboard' }]
 
   // Display label: use role name from roles[0] for custom users
   const displayRole = roleName === 'custom'

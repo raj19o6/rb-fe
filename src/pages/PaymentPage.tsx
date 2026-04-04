@@ -8,6 +8,7 @@ import { Badge } from '@/components/watermelon-ui/badge'
 import { Spinner } from '@/components/watermelon-ui/spinner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/watermelon-ui/dialog'
 import { DataTable, type Column } from '@/components/DataTable'
+import { StatusAlert } from '@/components/ConfirmDialog'
 import { paymentApi, billingApi, type Payment, type Billing } from '@/lib/api'
 import { useAuthStore } from '@/lib/auth'
 
@@ -22,8 +23,7 @@ function PaymentFormDialog({ open, onClose, onSuccess, billings, userId }: {
   billings: Billing[]; userId: string
 }) {
   const [form, setForm] = useState({
-    billing: '', paid_by: userId, amount: '', transaction_id: '',
-    method: 'online', status: 'completed', paid_at: new Date().toISOString().slice(0, 16),
+    billing: '', paid_by: userId, amount: '', method: 'online', status: 'completed',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -31,7 +31,7 @@ function PaymentFormDialog({ open, onClose, onSuccess, billings, userId }: {
   useEffect(() => {
     if (!open) return
     setError('')
-    setForm({ billing: '', paid_by: userId, amount: '', transaction_id: '', method: 'online', status: 'completed', paid_at: new Date().toISOString().slice(0, 16) })
+    setForm({ billing: '', paid_by: userId, amount: '', method: 'online', status: 'completed' })
   }, [open, userId])
 
   const f = (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -45,7 +45,7 @@ function PaymentFormDialog({ open, onClose, onSuccess, billings, userId }: {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true); setError('')
     try {
-      await paymentApi.create({ ...form, paid_at: new Date(form.paid_at).toISOString() })
+      await paymentApi.create({ billing: form.billing, paid_by: form.paid_by, amount: form.amount, method: form.method, status: form.status })
       onSuccess(); onClose()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: unknown } })?.response?.data
@@ -73,10 +73,6 @@ function PaymentFormDialog({ open, onClose, onSuccess, billings, userId }: {
             <Label>Amount</Label>
             <Input type="number" step="0.01" value={form.amount} onChange={f('amount')} required />
           </div>
-          <div className="space-y-1.5">
-            <Label>Transaction ID</Label>
-            <Input placeholder="TXN-20250201-001" value={form.transaction_id} onChange={f('transaction_id')} required />
-          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Method</Label>
@@ -96,11 +92,7 @@ function PaymentFormDialog({ open, onClose, onSuccess, billings, userId }: {
               </select>
             </div>
           </div>
-          <div className="space-y-1.5">
-            <Label>Paid At</Label>
-            <Input type="datetime-local" value={form.paid_at} onChange={f('paid_at')} required />
-          </div>
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <StatusAlert type="error" message={error} />}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={saving}>
@@ -119,6 +111,7 @@ export default function PaymentPage() {
   const [billings, setBillings] = useState<Billing[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [pageAlert, setPageAlert] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
 
   const fetchPayments = () => {
     setLoading(true)
@@ -168,6 +161,8 @@ export default function PaymentPage() {
         </Button>
       </div>
 
+      {pageAlert && <StatusAlert type={pageAlert.type} message={pageAlert.message} />}
+
       <div className="grid grid-cols-3 gap-3">
         <Card><CardContent className="pt-4 pb-4"><p className="text-xs text-muted-foreground">Total Payments</p><p className="text-2xl font-bold">{payments.length}</p></CardContent></Card>
         <Card><CardContent className="pt-4 pb-4"><p className="text-xs text-muted-foreground">Total Paid</p><p className="text-2xl font-bold text-green-600">₹{payments.filter(p => p.status === 'completed').reduce((s, p) => s + parseFloat(p.amount), 0).toFixed(2)}</p></CardContent></Card>
@@ -189,7 +184,13 @@ export default function PaymentPage() {
         </CardContent>
       </Card>
 
-      <PaymentFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSuccess={fetchPayments} billings={billings} userId={userId} />
+      <PaymentFormDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSuccess={() => { fetchPayments(); setPageAlert({ type: 'success', message: 'Payment submitted successfully.' }) }}
+        billings={billings}
+        userId={userId}
+      />
     </div>
   )
 }

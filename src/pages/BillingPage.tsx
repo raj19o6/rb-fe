@@ -12,8 +12,8 @@ import { StatusAlert } from '@/components/ConfirmDialog'
 import { billingApi, botsApi, usersApi, type Billing, type Bot, type ListUser } from '@/lib/api'
 
 const STATUS_COLORS: Record<string, string> = {
-  paid: 'bg-green-500/10 text-green-600 border-green-200',
-  unpaid: 'bg-yellow-500/10 text-yellow-600 border-yellow-200',
+  paid:    'border-green-500/30 bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200',
+  unpaid:  'border-yellow-500/40 bg-yellow-50 text-yellow-900 dark:bg-yellow-950 dark:text-yellow-200',
   overdue: 'bg-destructive/10 text-destructive border-destructive/20',
 }
 
@@ -21,7 +21,7 @@ function BillingFormDialog({ open, onClose, onSuccess, editBilling, bots, users 
   open: boolean; onClose: () => void; onSuccess: () => void
   editBilling: Billing | null; bots: Bot[]; users: ListUser[]
 }) {
-  const [form, setForm] = useState({ user: '', bot: '', amount: '', status: 'unpaid', billing_date: '', due_date: '' })
+  const [form, setForm] = useState({ user: '', bot: '', amount: '', price_per_action: '', status: 'unpaid', billing_date: '' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -29,8 +29,8 @@ function BillingFormDialog({ open, onClose, onSuccess, editBilling, bots, users 
     if (!open) return
     setError('')
     setForm(editBilling
-      ? { user: editBilling.user, bot: editBilling.bot, amount: editBilling.amount, status: editBilling.status, billing_date: editBilling.billing_date, due_date: editBilling.due_date }
-      : { user: '', bot: '', amount: '', status: 'unpaid', billing_date: '', due_date: '' })
+      ? { user: editBilling.user, bot: editBilling.bot, amount: editBilling.amount, price_per_action: editBilling.price_per_action, status: editBilling.status, billing_date: editBilling.billing_date }
+      : { user: '', bot: '', amount: '', price_per_action: '', status: 'unpaid', billing_date: '' })
   }, [open, editBilling])
 
   const f = (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -39,8 +39,11 @@ function BillingFormDialog({ open, onClose, onSuccess, editBilling, bots, users 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true); setError('')
     try {
-      if (editBilling) await billingApi.update(editBilling.id, { amount: form.amount, status: form.status, due_date: form.due_date })
-      else await billingApi.create(form)
+      if (editBilling) {
+        await billingApi.update(editBilling.id, { amount: form.amount, price_per_action: form.price_per_action, status: form.status })
+      } else {
+        await billingApi.create(form)
+      }
       onSuccess(); onClose()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: unknown } })?.response?.data
@@ -71,26 +74,28 @@ function BillingFormDialog({ open, onClose, onSuccess, editBilling, bots, users 
               </div>
             </>
           )}
-          <div className="space-y-1.5">
-            <Label>Amount</Label>
-            <Input type="number" step="0.01" placeholder="1200.00" value={form.amount} onChange={f('amount')} required />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Status</Label>
-            <select value={form.status} onChange={f('status')} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
-              <option value="unpaid">Unpaid</option>
-              <option value="paid">Paid</option>
-              <option value="overdue">Overdue</option>
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Amount</Label>
+              <Input type="number" step="0.01" placeholder="1000.00" value={form.amount} onChange={f('amount')} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Price Per Action</Label>
+              <Input type="number" step="0.01" placeholder="0.10" value={form.price_per_action} onChange={f('price_per_action')} required />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Billing Date</Label>
-              <Input type="date" value={form.billing_date} onChange={f('billing_date')} required={!editBilling} />
+              <Label>Status</Label>
+              <select value={form.status} onChange={f('status')} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+                <option value="unpaid">Unpaid</option>
+                <option value="paid">Paid</option>
+                <option value="overdue">Overdue</option>
+              </select>
             </div>
             <div className="space-y-1.5">
-              <Label>Due Date</Label>
-              <Input type="date" value={form.due_date} onChange={f('due_date')} required={!editBilling} />
+              <Label>Billing Date</Label>
+              <Input type="date" value={form.billing_date} onChange={f('billing_date')} required={!editBilling} />
             </div>
           </div>
           {error && <StatusAlert type="error" message={error} />}
@@ -114,6 +119,7 @@ export default function BillingPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editBilling, setEditBilling] = useState<Billing | null>(null)
+  const [pageAlert, setPageAlert] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
 
   const fetchBillings = () => {
     setLoading(true)
@@ -127,10 +133,14 @@ export default function BillingPage() {
   }, [])
 
   const handleDelete = async (b: Billing) => {
-    if (!confirm(`Delete billing for "${b.username}"?`)) return
     setDeletingId(b.id)
-    try { await billingApi.delete(b.id); setBillings(p => p.filter(x => x.id !== b.id)) }
-    finally { setDeletingId(null) }
+    try {
+      await billingApi.delete(b.id)
+      setBillings(p => p.filter(x => x.id !== b.id))
+      setPageAlert({ type: 'success', message: `Billing for "${b.username}" deleted.` })
+    } catch {
+      setPageAlert({ type: 'error', message: 'Failed to delete billing record.' })
+    } finally { setDeletingId(null) }
   }
 
   const columns: Column<Billing>[] = [
@@ -144,12 +154,12 @@ export default function BillingPage() {
       ),
     },
     { key: 'amount', label: 'Amount', render: (b) => <span className="font-mono text-sm font-semibold">₹{b.amount}</span> },
+    { key: 'price_per_action', label: 'Per Action', render: (b) => <span className="font-mono text-xs text-muted-foreground">₹{b.price_per_action}</span> },
     {
       key: 'status', label: 'Status', sortable: true,
       render: (b) => <Badge variant="outline" className={`text-xs capitalize ${STATUS_COLORS[b.status]}`}>{b.status}</Badge>,
     },
     { key: 'billing_date', label: 'Billing Date', render: (b) => <span className="text-xs text-muted-foreground">{b.billing_date}</span> },
-    { key: 'due_date', label: 'Due Date', render: (b) => <span className="text-xs text-muted-foreground">{b.due_date}</span> },
   ]
 
   const statusCounts = billings.reduce<Record<string, number>>((acc, b) => {
@@ -167,6 +177,8 @@ export default function BillingPage() {
           <Plus size={16} /> New Billing
         </Button>
       </div>
+
+      {pageAlert && <StatusAlert type={pageAlert.type} message={pageAlert.message} />}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card><CardContent className="pt-4 pb-4"><p className="text-xs text-muted-foreground">Total</p><p className="text-2xl font-bold">{billings.length}</p></CardContent></Card>
@@ -190,6 +202,8 @@ export default function BillingPage() {
             editPermission="change_customuser"
             deletePermission="delete_customuser"
             deletingId={deletingId}
+            deleteConfirmTitle="Delete Billing"
+            deleteConfirmDescription={(b) => `Delete billing for "${b.username}" (₹${b.amount})? This cannot be undone.`}
             emptyMessage="No billing records found."
           />
         </CardContent>

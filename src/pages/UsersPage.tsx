@@ -6,6 +6,7 @@ import { Badge } from '@/components/watermelon-ui/badge'
 import { DataTable, type Column } from '@/components/DataTable'
 import { UserFormDialog } from '@/components/UserFormDialog'
 import { Can } from '@/components/Can'
+import { StatusAlert } from '@/components/ConfirmDialog'
 import { usersApi, rolesApi, type ListUser, type Role } from '@/lib/api'
 import { useAuthStore } from '@/lib/auth'
 
@@ -18,6 +19,7 @@ export default function UsersPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editUser, setEditUser] = useState<ListUser | null>(null)
+  const [pageAlert, setPageAlert] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
 
   const fetchUsers = () => {
     setLoading(true)
@@ -37,11 +39,13 @@ export default function UsersPage() {
   }
 
   const handleDelete = async (user: ListUser) => {
-    if (!confirm(`Delete user "${user.username}"?`)) return
     setDeletingId(user.id)
     try {
       await usersApi.delete(user.id)
       setUsers((prev) => prev.filter((u) => u.id !== user.id))
+      setPageAlert({ type: 'success', message: `User "${user.username}" deleted successfully.` })
+    } catch {
+      setPageAlert({ type: 'error', message: `Failed to delete user "${user.username}".` })
     } finally {
       setDeletingId(null)
     }
@@ -129,6 +133,8 @@ export default function UsersPage() {
         </Can>
       </div>
 
+      {pageAlert && <StatusAlert type={pageAlert.type} message={pageAlert.message} />}
+
       {/* Stats row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card>
@@ -169,6 +175,8 @@ export default function UsersPage() {
             deletePermission="delete_customuser"
             viewPermission="view_customuser"
             deletingId={deletingId}
+            deleteConfirmTitle="Delete User"
+            deleteConfirmDescription={(u) => `Are you sure you want to delete "${u.username}"? This cannot be undone.`}
             emptyMessage="No users found."
           />
         </CardContent>
@@ -177,7 +185,7 @@ export default function UsersPage() {
       <UserFormDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        onSuccess={fetchUsers}
+        onSuccess={() => { fetchUsers(); setPageAlert({ type: 'success', message: 'User saved successfully.' }) }}
         editUser={editUser}
       />
     </div>

@@ -103,26 +103,39 @@ export default function BudgetPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editBudget, setEditBudget] = useState<Budget | null>(null)
+  const [pageAlert, setPageAlert] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
+  const [botFilter, setBotFilter] = useState('')
 
-  const fetchBudgets = () => {
+  const fetchBudgets = (bot_id?: string) => {
     setLoading(true)
-    const call = isClient ? budgetApi.getMy() : budgetApi.list()
-    call.then(({ data }) => setBudgets(Array.isArray(data) ? data : [])).finally(() => setLoading(false))
+    const call = isClient ? budgetApi.getMy(bot_id) : budgetApi.list()
+    const handler = isClient
+      ? call.then(({ data }) => setBudgets(Array.isArray(data) ? data : []))
+      : (call as ReturnType<typeof budgetApi.list>).then(({ data }) => setBudgets(data.results ?? []))
+    handler.catch(() => setPageAlert({ type: 'error', message: 'Failed to load budgets.' }))
+      .finally(() => setLoading(false))
   }
 
   useEffect(() => {
     fetchBudgets()
-    if (!isClient) {
-      botsApi.list().then(({ data }) => setBots(data.results ?? []))
-      usersApi.list().then(({ data }) => setUsers(data.results ?? []))
-    }
+    botsApi.list().then(({ data }) => setBots(data.results ?? []))
+    if (!isClient) usersApi.list().then(({ data }) => setUsers(data.results ?? []))
   }, [])
 
+  const handleBotFilter = (bot_id: string) => {
+    setBotFilter(bot_id)
+    fetchBudgets(bot_id || undefined)
+  }
+
   const handleDelete = async (b: Budget) => {
-    if (!confirm(`Delete budget for "${b.username}"?`)) return
     setDeletingId(b.id)
-    try { await budgetApi.delete(b.id); setBudgets(p => p.filter(x => x.id !== b.id)) }
-    finally { setDeletingId(null) }
+    try {
+      await budgetApi.delete(b.id)
+      setBudgets(p => p.filter(x => x.id !== b.id))
+      setPageAlert({ type: 'success', message: `Budget for "${b.username}" deleted.` })
+    } catch {
+      setPageAlert({ type: 'error', message: 'Failed to delete budget.' })
+    } finally { setDeletingId(null) }
   }
 
   const columns: Column<Budget>[] = [
@@ -158,6 +171,21 @@ export default function BudgetPage() {
         )}
       </div>
 
+          {isClient && bots.length > 0 && (
+            <div className="flex items-center gap-2">
+              <select
+                value={botFilter}
+                onChange={(e) => handleBotFilter(e.target.value)}
+                className="rounded-md border border-border bg-background px-3 py-1.5 text-sm"
+              >
+                <option value="">All Bots</option>
+                {bots.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            </div>
+          )}
+
+      {pageAlert && <StatusAlert type={pageAlert.type} message={pageAlert.message} />}
+
       <div className="grid grid-cols-3 gap-3">
         <Card><CardContent className="pt-4 pb-4"><p className="text-xs text-muted-foreground">Total Allocated</p><p className="text-2xl font-bold">₹{budgets.reduce((s, b) => s + parseFloat(b.allocated_amount), 0).toFixed(2)}</p></CardContent></Card>
         <Card><CardContent className="pt-4 pb-4"><p className="text-xs text-muted-foreground">Total Consumed</p><p className="text-2xl font-bold text-destructive">₹{budgets.reduce((s, b) => s + parseFloat(b.consumed_amount), 0).toFixed(2)}</p></CardContent></Card>
@@ -173,12 +201,14 @@ export default function BudgetPage() {
           <DataTable
             columns={columns} data={budgets} loading={loading}
             searchPlaceholder="Search by client or bot…" searchKeys={['username', 'bot_name']}
-            onRefresh={fetchBudgets}
+            onRefresh={() => fetchBudgets(botFilter || undefined)}
             onEdit={!isClient ? (b) => { setEditBudget(b); setDialogOpen(true) } : undefined}
             onDelete={!isClient ? handleDelete : undefined}
             editPermission="change_customuser"
             deletePermission="delete_customuser"
             deletingId={deletingId}
+            deleteConfirmTitle="Delete Budget"
+            deleteConfirmDescription={(b) => `Delete budget for "${b.username}" (${b.bot_name})? This cannot be undone.`}
             emptyMessage="No budgets found."
           />
         </CardContent>

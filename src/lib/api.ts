@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const BASE_URL = 'http://192.168.69.58:8000'
+const BASE_URL = 'https://8nh48kbv-8000.inc1.devtunnels.ms'
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -130,6 +130,22 @@ export const customRolesApi = {
   delete: (id: string) => api.delete(`/api/v1/customrole/${id}/`),
 }
 
+export type BotAllotment = {
+  id: string
+  bot: string
+  bot_name: string
+  user: string
+  username: string
+  allotted_by: string | null
+  allotted_at: string
+}
+
+export const botAllotmentsApi = {
+  list: () => api.get<Paginated<BotAllotment>>('/api/v1/botallotments/'),
+  create: (payload: { bot: string; user: string }) => api.post<BotAllotment>('/api/v1/botallotments/', payload),
+  delete: (id: string) => api.delete(`/api/v1/botallotments/${id}/`),
+}
+
 // ── Bot ─────────────────────────────────────────────────────────
 export type Bot = {
   id: string
@@ -144,6 +160,7 @@ export type Bot = {
 export const botsApi = {
   list: () => api.get<Paginated<Bot>>('/api/v1/bot/'),
   get: (id: string) => api.get<Bot>(`/api/v1/bot/${id}/`),
+  getByUser: (userId: string) => api.get<BotAllotment[]>(`/api/v1/getBotAllotmentsByUser/${userId}/`),
   create: (payload: { name: string; description: string; status: string; created_by: string }) => api.post<Bot>('/api/v1/bot/', payload),
   update: (id: string, payload: Partial<{ name: string; description: string; status: string }>) => api.patch<Bot>(`/api/v1/bot/${id}/`, payload),
   delete: (id: string) => api.delete(`/api/v1/bot/${id}/`),
@@ -158,7 +175,7 @@ export type Budget = {
   bot_name: string
   allocated_amount: string
   consumed_amount: string
-  remaining_amount: string
+  remaining_amount: string | number
   period_start: string
   period_end: string
   created_at: string
@@ -166,7 +183,7 @@ export type Budget = {
 }
 
 export const budgetApi = {
-  list: () => api.get<Budget[]>('/api/v1/budget/'),
+  list: () => api.get<Paginated<Budget>>('/api/v1/budget/'),
   getMy: (bot_id?: string) => api.get<Budget[]>(`/api/v1/getBudget/${bot_id ? `?bot_id=${bot_id}` : ''}`),
   create: (payload: { user: string; bot: string; allocated_amount: string; period_start: string; period_end: string }) =>
     api.post<Budget>('/api/v1/budget/', payload),
@@ -183,17 +200,17 @@ export type Billing = {
   bot: string
   bot_name: string
   amount: string
+  price_per_action: string
   status: 'unpaid' | 'paid' | 'overdue'
   billing_date: string
-  due_date: string
   created_at: string
 }
 
 export const billingApi = {
   list: () => api.get<Billing[]>('/api/v1/billing/'),
-  create: (payload: { user: string; bot: string; amount: string; status: string; billing_date: string; due_date: string }) =>
+  create: (payload: { user: string; bot: string; amount: string; price_per_action: string; status: string; billing_date: string }) =>
     api.post<Billing>('/api/v1/billing/', payload),
-  update: (id: string, payload: Partial<{ amount: string; status: string; due_date: string }>) =>
+  update: (id: string, payload: Partial<{ amount: string; price_per_action: string; status: string }>) =>
     api.patch<Billing>(`/api/v1/billing/${id}/`, payload),
   delete: (id: string) => api.delete(`/api/v1/billing/${id}/`),
 }
@@ -215,7 +232,7 @@ export type Payment = {
 
 export const paymentApi = {
   list: () => api.get<Payment[]>('/api/v1/payment/'),
-  create: (payload: { billing: string; paid_by: string; amount: string; transaction_id: string; method: string; status: string; paid_at: string }) =>
+  create: (payload: { billing: string; paid_by: string; amount: string; method: string; status: string }) =>
     api.post<Payment>('/api/v1/payment/', payload),
 }
 
@@ -278,6 +295,81 @@ export const assignApi = {
     api.get<Assignment[]>('/api/v1/assignments/'),
   myTeam: () =>
     api.get<TeamMember[]>('/api/v1/myTeam/'),
+}
+
+// ── Profile ─────────────────────────────────────────────────────
+export type UserProfile = {
+  id: string
+  user: string
+  username: string
+  email: string
+  first_name: string
+  last_name: string
+  contact_no: string
+  profile_picture: string | null
+  bio: string
+  created_at: string
+}
+
+export const profileApi = {
+  get: () => api.get<UserProfile>('/api/v1/userprofile/'),
+  update: (id: string, payload: Partial<Pick<UserProfile, 'first_name' | 'last_name' | 'contact_no' | 'bio'>>) =>
+    api.patch<UserProfile>(`/api/v1/userprofile/${id}/`, payload),
+}
+
+// ── Workflows ────────────────────────────────────────────────────
+export type Workflow = {
+  id: string
+  name: string
+  username: string
+  session_id: string
+  actions: { url: string; type: string; selector: string; value?: string; text?: string; timestamp: number }[]
+  action_count: number
+  status: string
+  success_rate: number | null
+  last_executed: string | null
+  recorded_at: string
+  created_at: string
+}
+
+export const workflowsApi = {
+  list: () => api.get<{ workflows: Workflow[] }>('/api/v1/workflows/'),
+  download: (id: string) => api.get(`/api/v1/workflows/${id}/download/`),
+  execute: (id: string) => api.post(`/api/v1/workflows/${id}/execute/`),
+  report: (id: string) => api.get(`/api/v1/workflows/${id}/report/`),
+}
+
+// ── Executions ───────────────────────────────────────────────────
+export type Execution = {
+  id: string
+  workflow_id: string
+  workflow_name: string
+  status: 'completed' | 'failed' | 'running' | 'queued' | 'cancelled'
+  execution_id: string
+  triggered_at: string
+  completed_at: string | null
+  created_at: string
+}
+
+export type ExecutionReport = {
+  id: string
+  workflow_id: string
+  workflow_name: string
+  status: string
+  executed_at: string
+  summary: {
+    total: number
+    passed: number
+    failed: number
+    security_issues: number
+    success_rate: number
+  }
+  html_report_url: string
+}
+
+export const executionsApi = {
+  list: () => api.get<Execution[]>('/api/v1/executions/'),
+  reports: () => api.get<ExecutionReport[]>('/api/v1/executionreports/'),
 }
 
 // ── Auth endpoints ──────────────────────────────────────────────

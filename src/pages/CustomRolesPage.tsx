@@ -173,6 +173,7 @@ export default function CustomRolesPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editRole, setEditRole] = useState<CustomRole | null>(null)
+  const [pageAlert, setPageAlert] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
 
   const fetchRoles = useCallback(() => {
     setLoading(true)
@@ -192,11 +193,13 @@ export default function CustomRolesPage() {
   }
 
   const handleDelete = async (role: CustomRole) => {
-    if (!confirm(`Delete role "${role.name}"?`)) return
     setDeletingId(role.id)
     try {
       await customRolesApi.delete(role.id)
       setRoles((prev) => prev.filter((r) => r.id !== role.id))
+      setPageAlert({ type: 'success', message: `Role "${role.name}" deleted successfully.` })
+    } catch {
+      setPageAlert({ type: 'error', message: `Failed to delete role "${role.name}".` })
     } finally {
       setDeletingId(null)
     }
@@ -264,6 +267,8 @@ export default function CustomRolesPage() {
         </Button>
       </div>
 
+      {pageAlert && <StatusAlert type={pageAlert.type} message={pageAlert.message} />}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><ShieldCheck size={18} /> My Custom Roles</CardTitle>
@@ -282,6 +287,8 @@ export default function CustomRolesPage() {
             editPermission="change_customuser"
             deletePermission="delete_customuser"
             deletingId={deletingId}
+            deleteConfirmTitle="Delete Custom Role"
+            deleteConfirmDescription={(r) => `Delete role "${r.name}"? Users assigned this role will lose it.`}
             emptyMessage="No custom roles yet. Create your first one."
           />
         </CardContent>
@@ -290,7 +297,7 @@ export default function CustomRolesPage() {
       <RoleFormDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        onSuccess={fetchRoles}
+        onSuccess={() => { fetchRoles(); setPageAlert({ type: 'success', message: 'Role saved successfully.' }) }}
         editRole={editRole}
         myPermissions={myPermissions}
       />

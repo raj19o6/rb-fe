@@ -4,7 +4,9 @@ import {
   AlertDialogFooter, AlertDialogAction, AlertDialogCancel,
 } from '@/components/watermelon-ui/alert-dialog'
 import { Alert, AlertTitle, AlertDescription } from '@/components/watermelon-ui/alert'
-import { AlertTriangle, CheckCircle, XCircle, Info } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, XCircle, Info } from 'lucide-react'
+
+export { AlertDialogTrigger }
 
 // ── ConfirmDialog ────────────────────────────────────────────────
 type ConfirmDialogProps = {
@@ -18,7 +20,8 @@ type ConfirmDialogProps = {
 }
 
 export function ConfirmDialog({
-  open, onOpenChange, title, description, onConfirm, confirmLabel = 'Confirm', variant = 'destructive',
+  open, onOpenChange, title, description,
+  onConfirm, confirmLabel = 'Confirm', variant = 'destructive',
 }: ConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -45,27 +48,48 @@ export function ConfirmDialog({
 }
 
 // ── StatusAlert ──────────────────────────────────────────────────
+type AlertType = 'error' | 'success' | 'info' | 'warning'
+
 type StatusAlertProps = {
-  type: 'error' | 'success' | 'info'
+  type: AlertType
   message: string
   title?: string
 }
 
+const ALERT_CONFIG: Record<AlertType, {
+  icon: React.ElementType
+  className: string
+  defaultTitle: string
+}> = {
+  error: {
+    icon: XCircle,
+    className: 'border-destructive/40 bg-destructive/10 text-destructive dark:bg-destructive/20',
+    defaultTitle: 'Error',
+  },
+  success: {
+    icon: CheckCircle2,
+    className: 'border-green-500/30 bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200',
+    defaultTitle: 'Success',
+  },
+  warning: {
+    icon: AlertTriangle,
+    className: 'border-yellow-500/40 bg-yellow-50 text-yellow-900 dark:bg-yellow-950 dark:text-yellow-200',
+    defaultTitle: 'Warning',
+  },
+  info: {
+    icon: Info,
+    className: 'border-blue-500/30 bg-blue-50 text-blue-800 dark:bg-blue-950 dark:text-blue-200',
+    defaultTitle: 'Info',
+  },
+}
+
 export function StatusAlert({ type, message, title }: StatusAlertProps) {
   if (!message) return null
-
-  const config = {
-    error: { variant: 'destructive' as const, icon: XCircle, defaultTitle: 'Error' },
-    success: { variant: 'default' as const, icon: CheckCircle, defaultTitle: 'Success' },
-    info: { variant: 'default' as const, icon: Info, defaultTitle: 'Info' },
-  }[type]
-
-  const Icon = config.icon
-
+  const { icon: Icon, className, defaultTitle } = ALERT_CONFIG[type]
   return (
-    <Alert variant={config.variant} className={type === 'success' ? 'border-green-200 bg-green-500/10 text-green-700' : type === 'info' ? 'border-blue-200 bg-blue-500/10 text-blue-700' : ''}>
+    <Alert className={className}>
       <Icon size={16} />
-      <AlertTitle>{title ?? config.defaultTitle}</AlertTitle>
+      <AlertTitle>{title ?? defaultTitle}</AlertTitle>
       <AlertDescription>{message}</AlertDescription>
     </Alert>
   )

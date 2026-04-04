@@ -9,20 +9,20 @@ import { Spinner } from '@/components/watermelon-ui/spinner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/watermelon-ui/dialog'
 import { DataTable, type Column } from '@/components/DataTable'
 import { StatusAlert } from '@/components/ConfirmDialog'
-import { botsApi, type Bot } from '@/lib/api'
-import { useAuthStore } from '@/lib/auth'
+import { botsApi, type Bot, type BotAllotment } from '@/lib/api'
+import { useAuthStore, useRoleName } from '@/lib/auth'
 
 const STATUS_COLORS: Record<string, string> = {
-  active: 'bg-green-500/10 text-green-600 border-green-200',
+  active: 'border-green-500/30 bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200',
   inactive: 'bg-muted text-muted-foreground',
-  maintenance: 'bg-yellow-500/10 text-yellow-600 border-yellow-200',
+  maintenance: 'border-yellow-500/40 bg-yellow-50 text-yellow-900 dark:bg-yellow-950 dark:text-yellow-200',
 }
 
 type FormState = { name: string; description: string; status: string }
 const empty: FormState = { name: '', description: '', status: 'active' }
 
 function BotFormDialog({ open, onClose, onSuccess, editBot }: {
-  open: boolean; onClose: () => void; onSuccess: () => void; editBot: Bot | null
+  open: boolean; onClose: () => void; onSuccess: (msg: string) => void; editBot: Bot | null
 }) {
   const userId = useAuthStore((s) => s.user?.id ?? '')
   const [form, setForm] = useState<FormState>(empty)
@@ -41,10 +41,12 @@ function BotFormDialog({ open, onClose, onSuccess, editBot }: {
     try {
       if (editBot) {
         await botsApi.update(editBot.id, form)
+        onSuccess(`Bot "${form.name}" updated successfully.`)
       } else {
         await botsApi.create({ ...form, created_by: userId })
+        onSuccess(`Bot "${form.name}" created successfully.`)
       }
-      onSuccess(); onClose()
+      onClose()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: unknown } })?.response?.data
       setError(msg ? JSON.stringify(msg) : 'Failed to save bot.')
@@ -79,7 +81,7 @@ function BotFormDialog({ open, onClose, onSuccess, editBot }: {
               ))}
             </div>
           </div>
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <StatusAlert type="error" message={error} />}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={saving}>
@@ -92,26 +94,106 @@ function BotFormDialog({ open, onClose, onSuccess, editBot }: {
   )
 }
 
+// ── Client view — allotted bots ──────────────────────────────────
+function ClientBotsView() {
+  const userId = useAuthStore((s) => s.user?.id ?? '')
+  const [allotments, setAllotments] = useState<BotAllotment[]>([])
+  const [loading, setLoading] = useState(true)
+  const [pageAlert, setPageAlert] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
+
+  const fetchAllotments = () => {
+    setLoading(true)
+    botsApi.getByUser(userId)
+      .then(({ data }) => setAllotments(Array.isArray(data) ? data : []))
+      .catch(() => setPageAlert({ type: 'error', message: 'Failed to load your bots.' }))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => { fetchAllotments() }, [])
+
+  const columns: Column<BotAllotment>[] = [
+    {
+      key: 'bot_name', label: 'Bot', sortable: true,
+      render: (a) => (
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
+            <BotIcon size={14} className="text-primary" />
+          </div>
+          <p className="font-medium text-sm">{a.bot_name}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'allotted_at', label: 'Allotted On',
+      render: (a) => <span className="text-xs text-muted-foreground">{a.allotted_at ? new Date(a.allotted_at).toLocaleDateString() : '—'}</span>,
+    },
+    {
+      key: 'bot', label: 'Bot ID',
+      render: (a) => <span className="font-mono text-[10px] text-muted-foreground">{a.bot.slice(0, 8)}…</span>,
+    },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">My Bots</h1>
+        <p className="text-sm text-muted-foreground">{allotments.length} bot{allotments.length !== 1 ? 's' : ''} allotted to your account.</p>
+      </div>
+      {pageAlert && <StatusAlert type={pageAlert.type} message={pageAlert.message} />}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><BotIcon size={18} /> My Allotted Bots</CardTitle>
+          <CardDescription>Bots assigned to you by your manager or admin.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DataTable
+            columns={columns}
+            data={allotments}
+            loading={loading}
+            searchPlaceholder="Search bots…"
+            searchKeys={['bot_name']}
+            onRefresh={fetchAllotments}
+            emptyMessage="No bots allotted to you yet."
+          />
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// ── Superuser / Manager view — full CRUD ─────────────────────────
 export default function BotsPage() {
+  const role = useRoleName()
+  const isClient = role === 'client'
+
+  if (isClient) return <ClientBotsView />
+
   const [bots, setBots] = useState<Bot[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editBot, setEditBot] = useState<Bot | null>(null)
-  const [alert, setAlert] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
+  const [pageAlert, setPageAlert] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
 
   const fetchBots = () => {
     setLoading(true)
-    botsApi.list().then(({ data }) => setBots(data.results ?? [])).finally(() => setLoading(false))
+    botsApi.list()
+      .then(({ data }) => setBots(data.results ?? []))
+      .catch(() => setPageAlert({ type: 'error', message: 'Failed to load bots.' }))
+      .finally(() => setLoading(false))
   }
 
   useEffect(() => { fetchBots() }, [])
 
   const handleDelete = async (bot: Bot) => {
     setDeletingId(bot.id)
-    try { await botsApi.delete(bot.id); setBots(p => p.filter(b => b.id !== bot.id)); setAlert({ type: 'success', message: `Bot "${bot.name}" deleted.` }) }
-    catch { setAlert({ type: 'error', message: 'Failed to delete bot.' }) }
-    finally { setDeletingId(null) }
+    try {
+      await botsApi.delete(bot.id)
+      setBots(p => p.filter(b => b.id !== bot.id))
+      setPageAlert({ type: 'success', message: `Bot "${bot.name}" deleted successfully.` })
+    } catch {
+      setPageAlert({ type: 'error', message: `Failed to delete bot "${bot.name}".` })
+    } finally { setDeletingId(null) }
   }
 
   const statusCounts = bots.reduce<Record<string, number>>((acc, b) => {
@@ -157,7 +239,7 @@ export default function BotsPage() {
         </Button>
       </div>
 
-      {alert && <StatusAlert type={alert.type} message={alert.message} />}
+      {pageAlert && <StatusAlert type={pageAlert.type} message={pageAlert.message} />}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card><CardContent className="pt-4 pb-4"><p className="text-xs text-muted-foreground">Total</p><p className="text-2xl font-bold">{bots.length}</p></CardContent></Card>
@@ -183,11 +265,17 @@ export default function BotsPage() {
             deletingId={deletingId}
             deleteConfirmTitle="Delete Bot"
             deleteConfirmDescription={(b) => `Are you sure you want to delete "${b.name}"? This cannot be undone.`}
+            emptyMessage="No bots yet. Create your first bot."
           />
         </CardContent>
       </Card>
 
-      <BotFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSuccess={fetchBots} editBot={editBot} />
+      <BotFormDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSuccess={(msg) => { fetchBots(); setPageAlert({ type: 'success', message: msg }) }}
+        editBot={editBot}
+      />
     </div>
   )
 }
