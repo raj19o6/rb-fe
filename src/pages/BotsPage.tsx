@@ -9,7 +9,7 @@ import { Spinner } from '@/components/watermelon-ui/spinner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/watermelon-ui/dialog'
 import { DataTable, type Column } from '@/components/DataTable'
 import { StatusAlert } from '@/components/ConfirmDialog'
-import { botsApi, type Bot, type BotAllotment } from '@/lib/api'
+import { botsApi, type Bot } from '@/lib/api'
 import { useAuthStore, useRoleName } from '@/lib/auth'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -96,40 +96,52 @@ function BotFormDialog({ open, onClose, onSuccess, editBot }: {
 
 // ── Client view — allotted bots ──────────────────────────────────
 function ClientBotsView() {
-  const userId = useAuthStore((s) => s.user?.id ?? '')
-  const [allotments, setAllotments] = useState<BotAllotment[]>([])
+  const [bots, setBots] = useState<Bot[]>([])
   const [loading, setLoading] = useState(true)
   const [pageAlert, setPageAlert] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
 
-  const fetchAllotments = () => {
+  const fetchBots = () => {
     setLoading(true)
-    botsApi.getByUser(userId)
-      .then(({ data }) => setAllotments(Array.isArray(data) ? data : []))
+    botsApi.list()
+      .then(({ data }) => setBots(data.results ?? []))
       .catch(() => setPageAlert({ type: 'error', message: 'Failed to load your bots.' }))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetchAllotments() }, [])
+  useEffect(() => { fetchBots() }, [])
 
-  const columns: Column<BotAllotment>[] = [
+  const statusCounts = bots.reduce<Record<string, number>>((acc, b) => {
+    acc[b.status] = (acc[b.status] ?? 0) + 1; return acc
+  }, {})
+
+  const columns: Column<Bot>[] = [
     {
-      key: 'bot_name', label: 'Bot', sortable: true,
-      render: (a) => (
+      key: 'name', label: 'Bot', sortable: true,
+      render: (b) => (
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
             <BotIcon size={14} className="text-primary" />
           </div>
-          <p className="font-medium text-sm">{a.bot_name}</p>
+          <div>
+            <p className="font-medium text-sm">{b.name}</p>
+            <p className="text-[10px] text-muted-foreground truncate max-w-[180px]">{b.description || '—'}</p>
+          </div>
         </div>
       ),
     },
     {
-      key: 'allotted_at', label: 'Allotted On',
-      render: (a) => <span className="text-xs text-muted-foreground">{a.allotted_at ? new Date(a.allotted_at).toLocaleDateString() : '—'}</span>,
+      key: 'status', label: 'Status', sortable: true,
+      render: (b) => (
+        <Badge variant="outline" className={`text-xs capitalize ${STATUS_COLORS[b.status]}`}>{b.status}</Badge>
+      ),
     },
     {
-      key: 'bot', label: 'Bot ID',
-      render: (a) => <span className="font-mono text-[10px] text-muted-foreground">{a.bot.slice(0, 8)}…</span>,
+      key: 'created_by_username', label: 'Created By',
+      render: (b) => <span className="text-xs text-muted-foreground">{b.created_by_username ?? '—'}</span>,
+    },
+    {
+      key: 'created_at', label: 'Created',
+      render: (b) => <span className="text-xs text-muted-foreground">{new Date(b.created_at).toLocaleDateString()}</span>,
     },
   ]
 
@@ -137,23 +149,37 @@ function ClientBotsView() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">My Bots</h1>
-        <p className="text-sm text-muted-foreground">{allotments.length} bot{allotments.length !== 1 ? 's' : ''} allotted to your account.</p>
+        <p className="text-sm text-muted-foreground">{bots.length} bot{bots.length !== 1 ? 's' : ''} available.</p>
       </div>
+
       {pageAlert && <StatusAlert type={pageAlert.type} message={pageAlert.message} />}
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card><CardContent className="pt-4 pb-4"><p className="text-xs text-muted-foreground">Total</p><p className="text-2xl font-bold">{bots.length}</p></CardContent></Card>
+        {(['active', 'inactive', 'maintenance'] as const).map(s => (
+          <Card key={s}><CardContent className="pt-4 pb-4">
+            <p className="text-xs text-muted-foreground capitalize">{s}</p>
+            <p className={`text-2xl font-bold ${s === 'active' ? 'text-green-600' : s === 'inactive' ? 'text-muted-foreground' : 'text-yellow-600'}`}>
+              {statusCounts[s] ?? 0}
+            </p>
+          </CardContent></Card>
+        ))}
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><BotIcon size={18} /> My Allotted Bots</CardTitle>
-          <CardDescription>Bots assigned to you by your manager or admin.</CardDescription>
+          <CardTitle className="flex items-center gap-2"><BotIcon size={18} /> My Bots</CardTitle>
+          <CardDescription>Bots available to your account.</CardDescription>
         </CardHeader>
         <CardContent>
           <DataTable
             columns={columns}
-            data={allotments}
+            data={bots}
             loading={loading}
             searchPlaceholder="Search bots…"
-            searchKeys={['bot_name']}
-            onRefresh={fetchAllotments}
-            emptyMessage="No bots allotted to you yet."
+            searchKeys={['name', 'description']}
+            onRefresh={fetchBots}
+            emptyMessage="No bots available yet."
           />
         </CardContent>
       </Card>

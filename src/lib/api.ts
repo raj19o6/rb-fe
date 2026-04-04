@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const BASE_URL = 'https://8nh48kbv-8000.inc1.devtunnels.ms'
+const BASE_URL = 'https://lknpz8c6-8000.inc1.devtunnels.ms/'
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -153,6 +153,7 @@ export type Bot = {
   description: string
   status: 'active' | 'inactive' | 'maintenance'
   created_by: string
+  created_by_username: string
   created_at: string
   updated_at: string
 }
@@ -337,6 +338,7 @@ export const workflowsApi = {
   download: (id: string) => api.get(`/api/v1/workflows/${id}/download/`),
   execute: (id: string) => api.post(`/api/v1/workflows/${id}/execute/`),
   report: (id: string) => api.get(`/api/v1/workflows/${id}/report/`),
+  delete: (id: string) => api.delete(`/api/v1/workflows/${id}/`),
 }
 
 // ── Executions ───────────────────────────────────────────────────

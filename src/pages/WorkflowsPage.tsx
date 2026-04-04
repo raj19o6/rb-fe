@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Play, Download, FileText, GitBranch, CheckCircle, XCircle, ShieldAlert, Percent } from 'lucide-react'
+import { Play, Download, FileText, GitBranch, CheckCircle, XCircle, ShieldAlert, Percent, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/watermelon-ui/card'
 import { Button } from '@/components/watermelon-ui/button'
 import { Badge } from '@/components/watermelon-ui/badge'
 import { Spinner } from '@/components/watermelon-ui/spinner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/watermelon-ui/dialog'
 import { DataTable, type Column } from '@/components/DataTable'
-import { StatusAlert } from '@/components/ConfirmDialog'
+import { StatusAlert, ConfirmDialog } from '@/components/ConfirmDialog'
 import { workflowsApi, type Workflow } from '@/lib/api'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -43,6 +43,8 @@ export default function WorkflowsPage() {
 
   // Steps dialog
   const [stepsDialog, setStepsDialog] = useState<{ open: boolean; workflow: Workflow | null }>({ open: false, workflow: null })
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Workflow | null>(null)
 
   const fetchWorkflows = () => {
     setLoading(true)
@@ -75,6 +77,17 @@ export default function WorkflowsPage() {
       setReportDialog({ open: false, loading: false, data: null, workflowName: '' })
       setAlert({ type: 'error', message: `No report available for "${w.name}" yet.` })
     }
+  }
+
+  const handleDelete = async (w: Workflow) => {
+    setConfirmDelete(null)
+    setDeletingId(w.id)
+    try {
+      await workflowsApi.delete(w.id)
+      fetchWorkflows()
+    } catch {
+      setAlert({ type: 'error', message: `Failed to delete "${w.name}".` })
+    } finally { setDeletingId(null) }
   }
 
   const handleDownload = async (w: Workflow) => {
@@ -159,6 +172,9 @@ export default function WorkflowsPage() {
           <Button variant="ghost" size="icon-sm" title="Download JSON" onClick={() => handleDownload(w)}>
             <Download size={14} />
           </Button>
+          <Button variant="ghost" size="icon-sm" title="Delete workflow" onClick={() => setConfirmDelete(w)} disabled={deletingId === w.id}>
+            {deletingId === w.id ? <Spinner size="sm" /> : <Trash2 size={14} className="text-destructive" />}
+          </Button>
         </div>
       ),
     },
@@ -187,6 +203,15 @@ export default function WorkflowsPage() {
           />
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onOpenChange={(v) => !v && setConfirmDelete(null)}
+        title="Delete Workflow"
+        description={`Are you sure you want to delete "${confirmDelete?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={() => confirmDelete && handleDelete(confirmDelete)}
+      />
 
       {/* ── Execute Result Dialog ── */}
       <Dialog open={execResult.open} onOpenChange={(v) => !v && setExecResult({ open: false, data: null })}>
