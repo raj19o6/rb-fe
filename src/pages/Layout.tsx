@@ -36,6 +36,7 @@ const NAV_BY_ROLE: Record<string, NavEntry[]> = {
     { to: '/team',              icon: Users,           label: 'My Team' },
     { to: '/custom-roles',      icon: ShieldPlus,      label: 'Custom Roles' },
     { to: '/bots',              icon: Bot,             label: 'Bots' },
+    { to: '/bot-prereqs',       icon: ClipboardList,   label: 'Bot Prerequisites' },
     { to: '/requests',          icon: ClipboardList,   label: 'Requests' },
     { to: '/budget',            icon: DollarSign,      label: 'Budget' },
     { to: '/billing',           icon: Receipt,         label: 'Billing' },
@@ -43,7 +44,6 @@ const NAV_BY_ROLE: Record<string, NavEntry[]> = {
   ],
   client: [
     { to: '/dashboard/client',  icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/bots',              icon: Bot,             label: 'Bots' },
     { to: '/requests',          icon: ClipboardList,   label: 'My Requests' },
     { to: '/workflows',         icon: GitBranch,       label: 'Workflows' },
     { to: '/executions',        icon: Zap,             label: 'Executions' },

@@ -391,11 +391,65 @@ export const executionsApi = {
   reports: () => api.get<ExecutionReport[]>('/api/v1/executionreports/'),
 }
 
+// ── Bot Prerequisites ────────────────────────────────────────────
+export type BotPrereq = {
+  id: string
+  bot: string
+  bot_name: string
+  name: string
+  description: string
+  is_required: boolean
+  created_at: string
+}
+
+export type BotPrereqResponse = {
+  bot_id: string
+  bot_name: string
+  prerequisites: BotPrereq[]
+  credential_fields: {
+    username: string
+    password: string
+    extra_data: Record<string, string>
+  }
+}
+
+export const prereqApi = {
+  listByBot: (botId: string) => api.get<BotPrereqResponse>(`/api/v1/bot/${botId}/prerequisites/`),
+  create: (payload: { bot: string; name: string; description: string; is_required: boolean }) =>
+    api.post<BotPrereq>('/api/v1/botprereq/', payload),
+  delete: (id: string) => api.delete(`/api/v1/botprereq/${id}/`),
+}
+
+// ── Credentials ──────────────────────────────────────────────────
+export type Credential = {
+  id: string
+  bot: string
+  bot_name: string
+  user: string
+  username_display: string
+  username: string
+  extra_data: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
+export const credentialsApi = {
+  list: () => api.get<Credential[]>('/api/v1/credentials/'),
+  create: (payload: { bot: string; username: string; password: string; extra_data: Record<string, unknown> }) =>
+    api.post<Credential>('/api/v1/credentials/', payload),
+}
+
 // ── Bot Requests ────────────────────────────────────────────────
 export type BotRequest = {
   id: string
   bot: string
   bot_name: string
+  credential: string | null
+  credential_detail: {
+    id: string
+    username: string
+    extra_data: Record<string, unknown>
+  } | null
   title: string
   description: string
   status: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed'
@@ -408,9 +462,29 @@ export type BotRequest = {
   updated_at: string
 }
 
+export type RequestWithCredential = {
+  id: string
+  title: string
+  description: string
+  status: string
+  bot: string
+  bot_name: string
+  requested_by: string
+  requested_by_username: string
+  credential: {
+    id: string
+    bot: string
+    bot_name: string
+    username: string
+    extra_data: Record<string, unknown>
+  } | null
+  created_at: string
+}
+
 export const requestsApi = {
   list: () => api.get<Paginated<BotRequest>>('/api/v1/requests/'),
-  create: (payload: { bot: string; title: string; description: string }) =>
+  listWithCredentials: () => api.get<RequestWithCredential[]>('/api/v1/getRequestWithCredentials/'),
+  create: (payload: { bot: string; credential: string; title: string; description: string }) =>
     api.post<BotRequest>('/api/v1/requests/', payload),
   approve: (id: string) => api.post(`/api/v1/requests/${id}/approve/`),
   reject: (id: string, reason: string) =>
