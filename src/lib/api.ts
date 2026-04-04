@@ -202,16 +202,18 @@ export type Billing = {
   bot_name: string
   amount: string
   price_per_action: string
+  balance_remaining: string
   status: 'unpaid' | 'paid' | 'overdue'
   billing_date: string
+  due_date: string | null
   created_at: string
 }
 
 export const billingApi = {
-  list: () => api.get<Billing[]>('/api/v1/billing/'),
+  list: () => api.get<Paginated<Billing>>('/api/v1/billing/'),
   create: (payload: { user: string; bot: string; amount: string; price_per_action: string; status: string; billing_date: string }) =>
     api.post<Billing>('/api/v1/billing/', payload),
-  update: (id: string, payload: Partial<{ amount: string; price_per_action: string; status: string }>) =>
+  update: (id: string, payload: Partial<{ amount: string; price_per_action: string; status: string; billing_date: string; due_date: string }>) =>
     api.patch<Billing>(`/api/v1/billing/${id}/`, payload),
   delete: (id: string) => api.delete(`/api/v1/billing/${id}/`),
 }
@@ -232,7 +234,7 @@ export type Payment = {
 }
 
 export const paymentApi = {
-  list: () => api.get<Payment[]>('/api/v1/payment/'),
+  list: () => api.get<Paginated<Payment>>('/api/v1/payment/'),
   create: (payload: { billing: string; paid_by: string; amount: string; method: string; status: string }) =>
     api.post<Payment>('/api/v1/payment/', payload),
 }

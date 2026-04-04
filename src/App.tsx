@@ -64,7 +64,7 @@ export default function App() {
           <Route path="/team"        element={<RoleRoute allowed={['superuser', 'manager', 'client', 'custom']}><TeamPage /></RoleRoute>} />
           <Route path="/my-permissions" element={<RoleRoute allowed={['manager', 'client', 'agent', 'custom']}><MyPermissionsPage /></RoleRoute>} />
           <Route path="/custom-roles"   element={<RoleRoute allowed={['manager', 'client']}><CustomRolesPage /></RoleRoute>} />
-          <Route path="/bots"           element={<RoleRoute allowed={['superuser', 'manager']}><BotsPage /></RoleRoute>} />
+          <Route path="/bots"           element={<RoleRoute allowed={['superuser', 'manager', 'client']}><BotsPage /></RoleRoute>} />
           <Route path="/profile"       element={<ProfilePage />} />
           <Route path="/workflows"      element={<RoleRoute allowed={['client']}><WorkflowsPage /></RoleRoute>} />
           <Route path="/executions"     element={<RoleRoute allowed={['client']}><ExecutionsPage /></RoleRoute>} />
@@ -72,7 +72,7 @@ export default function App() {
           <Route path="/bot-prereqs"       element={<RoleRoute allowed={['superuser', 'manager']}><BotPrereqPage /></RoleRoute>} />
           <Route path="/requests"         element={<RoleRoute allowed={['superuser', 'manager', 'client']}><RequestsPage /></RoleRoute>} />
           <Route path="/budget"         element={<RoleRoute allowed={['superuser', 'manager', 'client']}><BudgetPage /></RoleRoute>} />
-          <Route path="/billing"        element={<RoleRoute allowed={['superuser', 'manager']}><BillingPage /></RoleRoute>} />
+          <Route path="/billing"        element={<RoleRoute allowed={['superuser', 'manager', 'client']}><BillingPage /></RoleRoute>} />
           <Route path="/payments"       element={<RoleRoute allowed={['superuser', 'manager', 'client']}><PaymentPage /></RoleRoute>} />
         </Route>
       </Route>

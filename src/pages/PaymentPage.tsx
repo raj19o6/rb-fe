@@ -115,12 +115,12 @@ export default function PaymentPage() {
 
   const fetchPayments = () => {
     setLoading(true)
-    paymentApi.list().then(({ data }) => setPayments(Array.isArray(data) ? data : [])).finally(() => setLoading(false))
+    paymentApi.list().then(({ data }) => setPayments(data.results ?? [])).finally(() => setLoading(false))
   }
 
   useEffect(() => {
     fetchPayments()
-    billingApi.list().then(({ data }) => setBillings(Array.isArray(data) ? data : []))
+    billingApi.list().then(({ data }) => setBillings(data.results ?? []))
   }, [])
 
   const columns: Column<Payment>[] = [

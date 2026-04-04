@@ -123,7 +123,7 @@ export default function BillingPage() {
 
   const fetchBillings = () => {
     setLoading(true)
-    billingApi.list().then(({ data }) => setBillings(Array.isArray(data) ? data : [])).finally(() => setLoading(false))
+    billingApi.list().then(({ data }) => setBillings(data.results ?? [])).finally(() => setLoading(false))
   }
 
   useEffect(() => {
@@ -155,11 +155,13 @@ export default function BillingPage() {
     },
     { key: 'amount', label: 'Amount', render: (b) => <span className="font-mono text-sm font-semibold">₹{b.amount}</span> },
     { key: 'price_per_action', label: 'Per Action', render: (b) => <span className="font-mono text-xs text-muted-foreground">₹{b.price_per_action}</span> },
+    { key: 'balance_remaining', label: 'Remaining', render: (b) => <span className="font-mono text-xs text-green-600">₹{b.balance_remaining}</span> },
     {
       key: 'status', label: 'Status', sortable: true,
       render: (b) => <Badge variant="outline" className={`text-xs capitalize ${STATUS_COLORS[b.status]}`}>{b.status}</Badge>,
     },
     { key: 'billing_date', label: 'Billing Date', render: (b) => <span className="text-xs text-muted-foreground">{b.billing_date}</span> },
+    { key: 'due_date', label: 'Due Date', render: (b) => <span className="text-xs text-muted-foreground">{b.due_date ?? '—'}</span> },
   ]
 
   const statusCounts = billings.reduce<Record<string, number>>((acc, b) => {
