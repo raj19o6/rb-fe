@@ -341,56 +341,74 @@ export const workflowsApi = {
   list: () => api.get<{ workflows: Workflow[] }>('/api/v1/workflows/'),
   download: (id: string) => api.get(`/api/v1/workflows/${id}/download/`),
   execute: (id: string) => api.post(`/api/v1/workflows/${id}/execute/`),
-  report: (id: string) => api.get(`/api/v1/workflows/${id}/report/`),
+  report: (id: string) => api.get<WorkflowReport>(`/api/v1/workflows/${id}/report/`),
   delete: (id: string) => api.delete(`/api/v1/workflows/${id}/`),
+}
+
+export type SecurityFinding = {
+  url: string
+  type: string
+  severity: string
+  payload?: string
+  selector?: string
+  reason?: string
+  header?: string
+  owasp?: string
+  cvss?: number
+  iso27001?: string
+}
+
+export type WorkflowReport = {
+  workflow_id: string
+  workflow_name: string
+  username: string
+  status: string
+  executed_at: string
+  execution_time: number | null
+  summary: { total: number; passed: number; failed: number; security_issues: number; success_rate: number }
+  html_report: string
+  html_report_url: string
+  json_report_url: string
+  report: {
+    url: string
+    steps: { step: { url?: string; action: string; selector: string; value?: string | null }; error: string | null; status: 'pass' | 'fail' }[]
+    summary: { total: number; passed: number; failed: number; security_issues: number }
+    security: { critical: SecurityFinding[]; high: SecurityFinding[]; medium: SecurityFinding[]; low: SecurityFinding[] }
+    qa_findings: { type: string; category: string; severity: string; reason?: string; url?: string; fcp_ms?: number; load_time_ms?: number }[]
+    security_testcases: { id: string; title: string; severity: string; objective: string; steps: string[]; expected_result: string; risk: string; control_mapping: string }[]
+  }
 }
 
 // ── Executions ───────────────────────────────────────────────────
 export type Execution = {
   id: string
-  workflow_id: string
-  workflow_name: string
+  bot: string
+  bot_name: string
+  request: string
+  request_title: string
+  executed_by: string
+  executed_by_username: string
   status: 'completed' | 'failed' | 'running' | 'queued' | 'cancelled'
-  execution_id: string
-  triggered_at: string
-  completed_at: string | null
+  started_at: string | null
+  ended_at: string | null
   created_at: string
 }
 
 export type ExecutionReport = {
   id: string
-  workflow_id: string
-  workflow_name: string
-  status: string
-  execution_time?: number
-  report?: {
-    template: string
-    url: string
-    timestamp: string
-    summary: {
-      total: number
-      passed: number
-      failed: number
-      security_issues: number
-    }
-  }
-  html_report?: string
-  json_report?: { workflow: string; total: number; passed: number; failed: number }
-  // legacy fields
-  executed_at?: string
-  summary?: {
-    total: number
-    passed: number
-    failed: number
-    security_issues: number
-    success_rate?: number
-  }
-  html_report_url?: string
+  execution: string
+  bot_name: string
+  executed_by_username: string
+  summary: string
+  logs: string
+  error_message: string
+  total_price: string | null
+  created_at: string
 }
 
 export const executionsApi = {
-  list: () => api.get<Execution[]>('/api/v1/executions/'),
-  reports: () => api.get<ExecutionReport[]>('/api/v1/executionreports/'),
+  list: () => api.get<Paginated<Execution>>('/api/v1/executions/'),
+  reports: () => api.get<Paginated<ExecutionReport>>('/api/v1/executionreports/'),
 }
 
 // ── Bot Prerequisites ────────────────────────────────────────────
@@ -521,9 +539,10 @@ export const authApi = {
       bots: { total: number; active: number; inactive: number; maintenance: number }
       executions: { total: number; success: number; failed: number; running: number; queued: number; cancelled: number }
       budget: { total_allocated: number; total_consumed: number; total_remaining: number }
-      billing: { total_amount: number; paid: number; unpaid: number; overdue: number }
-      bugs: { open: { low: number; medium: number; high: number; critical: number }; total_open: number }
+      billing: { total_amount: number; paid: number; unpaid: number; overdue: number; total_balance_remaining: number }
+      bugs: { total: number; total_open: number; by_status: { open: number; in_progress: number; resolved: number; closed: number }; open_by_severity: { low: number; medium: number; high: number; critical: number } }
       requests: { total: number; pending: number; approved: number; in_progress: number; completed: number; rejected: number }
+      workflows: { total: number; total_actions_recorded: number; by_status: { saved: number; queued: number; running: number; completed: number; failed: number }; by_bot: unknown[]; by_client: unknown[]; recent: unknown[] }
       notifications: { unread_count: number; recent: unknown[] }
       users_roles?: { users: { total: number; active: number; inactive: number; superusers: number }; roles: { system_roles: number; custom_roles: number; total: number } }
     }>('/api/v1/getDashboard/'),
