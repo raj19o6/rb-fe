@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import LandingPage from '@/pages/LandingPage'
 import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import RolesPage from '@/pages/RolesPage'
@@ -48,7 +49,8 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={isAuthenticated ? <Navigate to={roleDest} replace /> : <LoginPage />} />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={isAuthenticated ? <Navigate to={roleDest} replace /> : <LoginPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/dashboard/admin"   element={<RoleRoute allowed={['superuser']}><DashboardPage /></RoleRoute>} />

@@ -24,7 +24,6 @@ const NAV_BY_ROLE: Record<string, NavEntry[]> = {
     { to: '/users',             icon: UserPlus,        label: 'Users' },
     { to: '/team',              icon: Users,           label: 'My Team' },
     { to: '/bots',              icon: Bot,             label: 'Bots' },
-    { to: '/bot-allotments',    icon: Link,            label: 'Bot Allotments' },
     { to: '/requests',          icon: ClipboardList,   label: 'Requests' },
     { to: '/budget',            icon: DollarSign,      label: 'Budget' },
     { to: '/billing',           icon: Receipt,         label: 'Billing' },

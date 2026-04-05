@@ -499,6 +499,8 @@ export const availableBotsApi = {
 
 // ── Auth endpoints ──────────────────────────────────────────────
 export const authApi = {
+  register: (payload: { username: string; password: string; email: string; first_name: string; last_name: string; contact_no: number }) =>
+    api.post('/api/v1/register/', payload),
   login: (username: string, password: string) =>
     api.post<{ access: string; refresh: string }>('/auth/token/', { username, password }),
 

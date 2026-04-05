@@ -8,15 +8,16 @@ export function ShimmerButton({ children, className, ...props }: ShimmerButtonPr
   return (
     <button
       className={cn(
-        "relative overflow-hidden px-6 py-3 rounded-lg font-medium",
+        "relative overflow-hidden rounded-lg font-medium px-6 py-3",
         "bg-primary text-primary-foreground",
         "hover:shadow-lg transition-shadow duration-300",
+        "inline-flex items-center justify-center gap-2",
         "group",
         className
       )}
       {...props}
     >
-      <span className="relative z-10">{children}</span>
+      <span className="relative z-10 inline-flex items-center justify-center gap-2">{children}</span>
       <div
         className={cn(
           "absolute inset-0 -translate-x-full",
