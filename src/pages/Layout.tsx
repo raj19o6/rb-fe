@@ -4,7 +4,7 @@ import {
   Sun, Moon, LayoutDashboard, LogOut, Bot,
   ChevronRight, ShieldCheck, ShieldPlus,
   UserPlus, Users, MoreHorizontal, DollarSign, Receipt, CreditCard, Link,
-  GitBranch, UserCircle, ClipboardList,
+  GitBranch, UserCircle, ClipboardList, Settings,
 } from 'lucide-react'
 import { Button } from '@/components/watermelon-ui/button'
 import { Avatar, AvatarFallback } from '@/components/watermelon-ui/avatar'
@@ -28,6 +28,7 @@ const NAV_BY_ROLE: Record<string, NavEntry[]> = {
     { to: '/budget',            icon: DollarSign,      label: 'Budget' },
     { to: '/billing',           icon: Receipt,         label: 'Billing' },
     { to: '/payments',          icon: CreditCard,      label: 'Payments' },
+    { to: '/settings',          icon: Settings,        label: 'Settings' },
   ],
   manager: [
     { to: '/dashboard/manager', icon: LayoutDashboard, label: 'Dashboard' },

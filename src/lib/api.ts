@@ -216,6 +216,10 @@ export const billingApi = {
   update: (id: string, payload: Partial<{ amount: string; price_per_action: string; status: string; billing_date: string; due_date: string }>) =>
     api.patch<Billing>(`/api/v1/billing/${id}/`, payload),
   delete: (id: string) => api.delete(`/api/v1/billing/${id}/`),
+  grantWelcomeCredit: () =>
+    api.post<{ granted: string[]; skipped: string[]; message: string }>('/api/v1/billing/grant_welcome_credit/'),
+  topUp: (payload: { user_id: string; amount: string }) =>
+    api.post<{ message: string }>('/api/v1/billing/top_up/', payload),
 }
 
 // ── Payment ──────────────────────────────────────────────────────

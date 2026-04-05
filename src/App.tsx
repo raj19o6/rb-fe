@@ -19,6 +19,7 @@ import Layout from '@/pages/Layout'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import BotPrereqPage from '@/pages/BotPrereqPage'
 import RequestsPage from '@/pages/RequestsPage'
+import SettingsPage from '@/pages/SettingsPage'
 import { useAuthStore, useRoleName } from '@/lib/auth'
 
 function RoleRoute({ allowed, children }: { allowed: string[]; children: React.ReactNode }) {
@@ -70,6 +71,7 @@ export default function App() {
           <Route path="/workflows"      element={<RoleRoute allowed={['client']}><WorkflowsPage /></RoleRoute>} />
           <Route path="/bot-allotments"  element={<RoleRoute allowed={['superuser']}><BotAllotmentsPage /></RoleRoute>} />
           <Route path="/bot-prereqs"       element={<RoleRoute allowed={['superuser', 'manager']}><BotPrereqPage /></RoleRoute>} />
+          <Route path="/settings"           element={<RoleRoute allowed={['superuser']}><SettingsPage /></RoleRoute>} />
           <Route path="/requests"         element={<RoleRoute allowed={['superuser', 'manager', 'client']}><RequestsPage /></RoleRoute>} />
           <Route path="/budget"         element={<RoleRoute allowed={['superuser', 'manager', 'client']}><BudgetPage /></RoleRoute>} />
           <Route path="/billing"        element={<RoleRoute allowed={['superuser', 'manager', 'client']}><BillingPage /></RoleRoute>} />
