@@ -392,14 +392,14 @@ export default function WorkflowsPage() {
           </div>
           {/* Hover tooltip */}
           <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-3 space-y-2 hidden group-hover:block">
-            <p className="text-sm font-semibold">How to use RB-BOT Recorder</p>
-            <ol className="space-y-1.5 text-xs text-muted-foreground list-none">
-              <li className="flex items-start gap-2"><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold mt-0.5">1</span>Open Chrome and go to the Extensions page (<span className="font-mono bg-muted px-1 rounded">chrome://extensions</span>)</li>
-              <li className="flex items-start gap-2"><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold mt-0.5">2</span>Enable <span className="font-medium text-foreground">Developer Mode</span> (top right toggle)</li>
-              <li className="flex items-start gap-2"><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold mt-0.5">3</span>Search for <span className="font-medium text-foreground">RB-BOT Workflow Recorder</span> in the Chrome Web Store</li>
-              <li className="flex items-start gap-2"><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold mt-0.5">4</span>Click <span className="font-medium text-foreground">Add to Chrome</span> and pin the extension</li>
-              <li className="flex items-start gap-2"><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold mt-0.5">5</span>Click the RB-BOT icon in your toolbar, log in, and start recording your workflow</li>
-              <li className="flex items-start gap-2"><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold mt-0.5">6</span>Your recorded workflows will appear here automatically</li>
+            <p className="text-xs font-semibold">How to use RB-BOT Recorder</p>
+            <ol className="space-y-1 text-xs text-muted-foreground list-none">
+              <li className="flex items-start gap-1.5"><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold mt-0.5">1</span>Open Chrome → <span className="font-mono bg-muted px-1 rounded text-[10px]">chrome://extensions</span></li>
+              <li className="flex items-start gap-1.5"><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold mt-0.5">2</span>Enable <span className="font-medium text-foreground">Developer Mode</span></li>
+              <li className="flex items-start gap-1.5"><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold mt-0.5">3</span>Search <span className="font-medium text-foreground">RB-BOT Workflow Recorder</span> in Web Store</li>
+              <li className="flex items-start gap-1.5"><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold mt-0.5">4</span>Click <span className="font-medium text-foreground">Add to Chrome</span> and pin it</li>
+              <li className="flex items-start gap-1.5"><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold mt-0.5">5</span>Click the icon, log in, and start recording</li>
+              <li className="flex items-start gap-1.5"><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold mt-0.5">6</span>Recorded workflows appear here automatically</li>
             </ol>
           </div>
         </div>

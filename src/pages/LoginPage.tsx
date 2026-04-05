@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from 'next-themes'
-import { Sun, Moon, Eye, EyeOff, Bot, ArrowLeft } from 'lucide-react'
+import { Sun, Moon, Eye, EyeOff, Bot, ArrowLeft, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/watermelon-ui/card'
 import { Button } from '@/components/watermelon-ui/button'
 import { Input } from '@/components/watermelon-ui/input'
@@ -30,6 +30,37 @@ const VIEW_SUBTITLE: Record<View, string> = {
 }
 
 const emptyRegister = { username: '', password: '', email: '', first_name: '', last_name: '', contact_no: '' }
+
+function ErrorBox({ message }: { message: string }) {
+  if (!message) return null
+  return (
+    <div className="flex items-start gap-2.5 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2.5">
+      <AlertCircle size={15} className="text-destructive shrink-0 mt-0.5" />
+      <p className="text-xs text-destructive leading-relaxed">{message}</p>
+    </div>
+  )
+}
+
+function SuccessBox({ message }: { message: string }) {
+  if (!message) return null
+  return (
+    <div className="flex items-start gap-2.5 rounded-md border border-green-500/40 bg-green-50 dark:bg-green-950/40 px-3 py-2.5">
+      <CheckCircle2 size={15} className="text-green-600 shrink-0 mt-0.5" />
+      <p className="text-xs text-green-700 dark:text-green-300 leading-relaxed">{message}</p>
+    </div>
+  )
+}
+
+function extractError(err: unknown): string {
+  const data = (err as { response?: { data?: unknown } })?.response?.data
+  if (!data) return ''
+  if (typeof data === 'string') return data
+  if (typeof data === 'object') {
+    const entries = Object.entries(data as Record<string, unknown>)
+    return entries.map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join(' · ')
+  }
+  return JSON.stringify(data)
+}
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -60,6 +91,8 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!username.trim()) { setError('Please enter your username.'); return }
+    if (!password.trim()) { setError('Please enter your password.'); return }
     setError(''); setLoading(true)
     try {
       await login(username, password)
@@ -71,8 +104,15 @@ export default function LoginPage() {
         : role === 'custom' ? '/dashboard/custom'
         : '/dashboard/admin'
       navigate(dest)
-    } catch {
-      setError('Invalid username or password. Please try again.')
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status
+      if (status === 401 || status === 400) {
+        setError('Incorrect username or password. Please try again.')
+      } else if (status === 403) {
+        setError('Your account has been disabled. Contact your administrator.')
+      } else {
+        setError('Unable to connect. Please check your internet and try again.')
+      }
     } finally { setLoading(false) }
   }
 
@@ -92,8 +132,7 @@ export default function LoginPage() {
       setReg(emptyRegister)
       setTimeout(() => reset('login'), 1500)
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: unknown } })?.response?.data
-      setError(msg ? JSON.stringify(msg) : 'Registration failed. Please try again.')
+      setError(extractError(err) || 'Registration failed. Please try again.')
     } finally { setLoading(false) }
   }
 
@@ -177,8 +216,9 @@ export default function LoginPage() {
                   <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
                     <Input id="username" type="text" placeholder="your username"
-                      value={username} onChange={(e) => setUsername(e.target.value)}
-                      required autoComplete="username" />
+                      value={username} onChange={(e) => { setUsername(e.target.value); setError('') }}
+                      required autoComplete="username"
+                      aria-invalid={!!error} />
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -191,8 +231,9 @@ export default function LoginPage() {
                     <div className="relative">
                       <Input id="password" type={showPassword ? 'text' : 'password'}
                         placeholder="••••••••" value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required autoComplete="current-password" />
+                        onChange={(e) => { setPassword(e.target.value); setError('') }}
+                        required autoComplete="current-password"
+                        aria-invalid={!!error} />
                       <Button type="button" variant="ghost" size="icon-sm"
                         className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                         onClick={() => setShowPassword(!showPassword)}>
@@ -200,7 +241,7 @@ export default function LoginPage() {
                       </Button>
                     </div>
                   </div>
-                  {error && <p className="text-xs text-destructive">{error}</p>}
+                  <ErrorBox message={error} />
                   <div className="flex items-center gap-2">
                     <Checkbox id="remember" />
                     <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
@@ -258,8 +299,8 @@ export default function LoginPage() {
                     <Label>Contact No.</Label>
                     <Input type="number" placeholder="9999999999" value={reg.contact_no} onChange={r('contact_no')} required />
                   </div>
-                  {error && <p className="text-xs text-destructive">{error}</p>}
-                  {success && <p className="text-xs text-green-600">{success}</p>}
+                  <ErrorBox message={error} />
+                  <SuccessBox message={success} />
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? <><Spinner size="sm" /> Creating account...</> : 'Create Account'}
                   </Button>
@@ -282,8 +323,8 @@ export default function LoginPage() {
                     <Input id="email" type="email" placeholder="you@example.com"
                       value={email} onChange={(e) => setEmail(e.target.value)} required />
                   </div>
-                  {error && <p className="text-xs text-destructive">{error}</p>}
-                  {success && <p className="text-xs text-green-600">{success}</p>}
+                  <ErrorBox message={error} />
+                  <SuccessBox message={success} />
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? <><Spinner size="sm" /> Sending...</> : 'Send Reset Token'}
                   </Button>
@@ -315,8 +356,8 @@ export default function LoginPage() {
                       </Button>
                     </div>
                   </div>
-                  {error && <p className="text-xs text-destructive">{error}</p>}
-                  {success && <p className="text-xs text-green-600">{success}</p>}
+                  <ErrorBox message={error} />
+                  <SuccessBox message={success} />
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? <><Spinner size="sm" /> Resetting...</> : 'Reset Password'}
                   </Button>
